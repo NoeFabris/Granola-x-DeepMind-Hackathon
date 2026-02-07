@@ -32,3 +32,8 @@
 - Vertical `snap-y` containers combined with `IntersectionObserver` are enough to detect the active slide and drive play/pause behavior for a swipe-style feed.
 - Keeping playback/generation state keyed by meeting id makes it straightforward to preserve per-meeting controls while users scroll between videos.
 - Reusing the existing `POST /api/generate-video` pipeline endpoint from feed controls avoids duplicating orchestration logic in the UI layer.
+
+## 2026-02-07 (Task 09)
+- The existing `runId` support in `POST /api/generate-video` plus `GET /api/generate-video?runId=...` enables UI progress updates without introducing websockets or queue workers.
+- Pipeline events do not emit per-clip counts while clips are rendering, so the feed can derive a user-friendly `Creating clips x/y` label from known chunk totals and elapsed time.
+- Keeping progress UI in dedicated `GeneratingState`, `ProgressIndicator`, and `ErrorState` components makes VideoFeed logic easier to maintain while preserving task scope.

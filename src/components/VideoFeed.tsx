@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConnectGranola } from "@/components/ConnectGranola";
+import { ErrorState } from "@/components/ErrorState";
+import { GeneratingState } from "@/components/GeneratingState";
+import type { ProgressStep, ProgressStepStatus } from "@/components/ProgressIndicator";
 import { VideoControls } from "@/components/VideoControls";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import type { GranolaMeeting } from "@/types/granola";
@@ -17,14 +20,45 @@ interface MeetingsPayload {
   error?: string;
 }
 
+interface VideoPipelineProgressEvent {
+  step?: string;
+  status?: string;
+  message?: string;
+  timestamp?: string;
+}
+
 interface GeneratedVideoPayload {
   videoUrl?: string;
+  runId?: string;
   authUrl?: string;
   connectUrl?: string;
   error?: string;
+  progress?: VideoPipelineProgressEvent[];
+}
+
+interface VideoGenerationRunPayload {
+  status?: string;
+  progress?: VideoPipelineProgressEvent[];
+  error?: string;
+}
+
+type PipelineStep = "script" | "clips" | "stitching";
+
+interface GenerationProgressSnapshot {
+  runId: string;
+  progress: VideoPipelineProgressEvent[];
 }
 
 const DEFAULT_CONNECT_URL = "/api/auth/granola/connect";
+const STEP_LABELS: Record<PipelineStep, string> = {
+  script: "Generating script",
+  clips: "Creating clips",
+  stitching: "Stitching video",
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 function parseConnectUrl(payload: MeetingsPayload | GeneratedVideoPayload): string {
   if (typeof payload.authUrl === "string" && payload.authUrl.length > 0) {
@@ -72,6 +106,204 @@ function summarizeKeyPoints(summary?: string): string[] {
     .slice(0, 3);
 }
 
+function createRunId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `run-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function normalizeProgressEvents(progress: unknown): VideoPipelineProgressEvent[] {
+  if (!Array.isArray(progress)) {
+    return [];
+  }
+
+  const events: VideoPipelineProgressEvent[] = [];
+
+  for (const entry of progress) {
+    if (!isRecord(entry)) {
+      continue;
+    }
+
+    const step = typeof entry.step === "string" ? entry.step : undefined;
+    const status = typeof entry.status === "string" ? entry.status : undefined;
+    const message = typeof entry.message === "string" ? entry.message : undefined;
+    const timestamp = typeof entry.timestamp === "string" ? entry.timestamp : undefined;
+
+    events.push({
+      step,
+      status,
+      message,
+      timestamp,
+    });
+  }
+
+  return events;
+}
+
+function statusFromProgress(
+  progress: VideoPipelineProgressEvent[],
+  step: PipelineStep
+): ProgressStepStatus {
+  let currentStatus: ProgressStepStatus = "pending";
+
+  for (const event of progress) {
+    if (event.step !== step) {
+      continue;
+    }
+
+    if (event.status === "running" || event.status === "completed" || event.status === "failed") {
+      currentStatus = event.status;
+    }
+  }
+
+  return currentStatus;
+}
+
+function parseCount(message: string, pattern: RegExp): number | undefined {
+  const matched = message.match(pattern);
+
+  if (!matched?.[1]) {
+    return undefined;
+  }
+
+  const count = Number.parseInt(matched[1], 10);
+
+  if (!Number.isFinite(count) || count <= 0) {
+    return undefined;
+  }
+
+  return count;
+}
+
+function readScriptChunkCount(progress: VideoPipelineProgressEvent[]): number | undefined {
+  for (let index = progress.length - 1; index >= 0; index -= 1) {
+    const message = progress[index]?.message;
+
+    if (!message) {
+      continue;
+    }
+
+    const count = parseCount(message, /Generated\s+(\d+)\s+script\s+chunks?/i);
+
+    if (count) {
+      return count;
+    }
+  }
+
+  return undefined;
+}
+
+function readGeneratedClipCount(progress: VideoPipelineProgressEvent[]): number | undefined {
+  for (let index = progress.length - 1; index >= 0; index -= 1) {
+    const message = progress[index]?.message;
+
+    if (!message) {
+      continue;
+    }
+
+    const count = parseCount(message, /Generated\s+(\d+)\s+video\s+clips?/i);
+
+    if (count) {
+      return count;
+    }
+  }
+
+  return undefined;
+}
+
+function readStepStartedAt(progress: VideoPipelineProgressEvent[], step: PipelineStep): number | undefined {
+  for (let index = progress.length - 1; index >= 0; index -= 1) {
+    const event = progress[index];
+
+    if (!event || event.step !== step || event.status !== "running") {
+      continue;
+    }
+
+    const parsed = Date.parse(event.timestamp ?? "");
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+}
+
+function buildProgressView(
+  progress: VideoPipelineProgressEvent[],
+  progressTick: number
+): { headline: string; detail: string; steps: ProgressStep[] } {
+  const scriptStatus = statusFromProgress(progress, "script");
+  const clipsStatus = statusFromProgress(progress, "clips");
+  const stitchingStatus = statusFromProgress(progress, "stitching");
+
+  const steps: ProgressStep[] = [
+    {
+      id: "script",
+      label: STEP_LABELS.script,
+      status: scriptStatus,
+    },
+    {
+      id: "clips",
+      label: STEP_LABELS.clips,
+      status: clipsStatus,
+    },
+    {
+      id: "stitching",
+      label: STEP_LABELS.stitching,
+      status: stitchingStatus,
+    },
+  ];
+
+  const latestMessage =
+    typeof progress[progress.length - 1]?.message === "string"
+      ? (progress[progress.length - 1]?.message as string)
+      : "Preparing recap generation.";
+
+  const scriptChunkCount = readScriptChunkCount(progress);
+  const generatedClipCount = readGeneratedClipCount(progress);
+
+  let headline = STEP_LABELS.script;
+
+  if (stitchingStatus === "running" || stitchingStatus === "completed") {
+    headline = STEP_LABELS.stitching;
+  } else if (clipsStatus === "running" || clipsStatus === "completed") {
+    if (typeof scriptChunkCount === "number") {
+      const startedAt = readStepStartedAt(progress, "clips") ?? progressTick;
+      const elapsedMs = Math.max(0, progressTick - startedAt);
+      const simulatedCount = Math.max(1, Math.floor(elapsedMs / 1400) + 1);
+      const currentCount =
+        clipsStatus === "completed"
+          ? generatedClipCount ?? scriptChunkCount
+          : Math.min(scriptChunkCount, simulatedCount);
+
+      headline = `Creating clips ${Math.max(1, Math.min(scriptChunkCount, currentCount))}/${scriptChunkCount}`;
+    } else {
+      headline = STEP_LABELS.clips;
+    }
+  } else if (scriptStatus === "completed") {
+    headline = STEP_LABELS.clips;
+  }
+
+  if (scriptStatus === "failed" || clipsStatus === "failed" || stitchingStatus === "failed") {
+    headline = "Generation failed";
+  }
+
+  return {
+    headline,
+    detail: latestMessage,
+    steps,
+  };
+}
+
 export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
   const [meetings, setMeetings] = useState<GranolaMeeting[]>([]);
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
@@ -83,6 +315,10 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
   const [generationErrors, setGenerationErrors] = useState<Record<string, string>>({});
   const [isGeneratingByMeeting, setIsGeneratingByMeeting] = useState<Record<string, boolean>>({});
   const [isPausedByMeeting, setIsPausedByMeeting] = useState<Record<string, boolean>>({});
+  const [generationProgressByMeeting, setGenerationProgressByMeeting] = useState<
+    Record<string, GenerationProgressSnapshot>
+  >({});
+  const [progressTick, setProgressTick] = useState(() => Date.now());
 
   const feedRef = useRef<HTMLDivElement | null>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
@@ -215,28 +451,100 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
     };
   }, [meetings.length]);
 
+  useEffect(() => {
+    const hasActiveGeneration = Object.values(isGeneratingByMeeting).some(Boolean);
+
+    if (!hasActiveGeneration) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setProgressTick(Date.now());
+    }, 900);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isGeneratingByMeeting]);
+
   const handleGenerateVideo = useCallback(async (meeting: GranolaMeeting, index: number) => {
     const key = meetingKey(meeting, index);
+    const runId = createRunId();
 
     setGenerationErrors((previous) => {
       if (!previous[key]) {
         return previous;
       }
 
-      const nextState: Record<string, string> = {};
-
-      for (const [entryKey, value] of Object.entries(previous)) {
-        if (entryKey !== key) {
-          nextState[entryKey] = value;
-        }
-      }
-
+      const nextState = { ...previous };
+      delete nextState[key];
       return nextState;
     });
+    setGenerationProgressByMeeting((previous) => ({
+      ...previous,
+      [key]: {
+        runId,
+        progress: [
+          {
+            step: "script",
+            status: "running",
+            message: "Generating script for meeting recap.",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      },
+    }));
     setIsGeneratingByMeeting((previous) => ({
       ...previous,
       [key]: true,
     }));
+    setProgressTick(Date.now());
+
+    let keepPolling = true;
+
+    const pollProgress = async () => {
+      while (keepPolling) {
+        try {
+          const progressResponse = await fetch(`/api/generate-video?runId=${encodeURIComponent(runId)}`, {
+            cache: "no-store",
+          });
+          const runPayload =
+            (await progressResponse.json().catch(() => ({}))) as VideoGenerationRunPayload;
+
+          if (progressResponse.ok) {
+            const progressEvents = normalizeProgressEvents(runPayload.progress);
+
+            if (progressEvents.length > 0) {
+              setGenerationProgressByMeeting((previous) => ({
+                ...previous,
+                [key]: {
+                  runId,
+                  progress: progressEvents,
+                },
+              }));
+            }
+          }
+
+          if (
+            runPayload.status === "completed" ||
+            runPayload.status === "failed" ||
+            runPayload.status === "auth_required"
+          ) {
+            keepPolling = false;
+          }
+        } catch {
+          // Ignore transient polling errors and continue until the POST request resolves.
+        }
+
+        if (!keepPolling) {
+          break;
+        }
+
+        await sleep(1200);
+      }
+    };
+
+    const pollTask = pollProgress();
 
     try {
       const response = await fetch("/api/generate-video", {
@@ -246,17 +554,32 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
         },
         body: JSON.stringify({
           meetingId: meeting.id,
+          runId,
         }),
       });
 
       const payload = (await response.json().catch(() => ({}))) as GeneratedVideoPayload;
+      const responseProgress = normalizeProgressEvents(payload.progress);
+
+      if (responseProgress.length > 0) {
+        setGenerationProgressByMeeting((previous) => ({
+          ...previous,
+          [key]: {
+            runId,
+            progress: responseProgress,
+          },
+        }));
+      }
 
       if (response.status === 401) {
         setIsConnected(false);
         setConnectUrl(parseConnectUrl(payload));
         setGenerationErrors((previous) => ({
           ...previous,
-          [key]: "Granola connection required to generate this recap.",
+          [key]:
+            typeof payload.error === "string" && payload.error.trim().length > 0
+              ? payload.error
+              : "Granola connection required to generate this recap.",
         }));
         return;
       }
@@ -292,6 +615,8 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
         [key]: message,
       }));
     } finally {
+      keepPolling = false;
+      await pollTask;
       setIsGeneratingByMeeting((previous) => ({
         ...previous,
         [key]: false,
@@ -360,7 +685,12 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
           const isPaused = Boolean(isPausedByMeeting[key]);
           const isCurrentSlide = index === activeIndex;
           const isPlaying = isCurrentSlide && hasVideo && !isPaused;
+          const isGenerating = Boolean(isGeneratingByMeeting[key]);
           const keyPoints = summarizeKeyPoints(meeting.summary);
+          const progressView = buildProgressView(
+            generationProgressByMeeting[key]?.progress ?? [],
+            progressTick
+          );
 
           return (
             <article
@@ -377,6 +707,15 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
                 isPaused={isPaused}
                 title={meeting.title}
               />
+
+              {isGenerating ? (
+                <GeneratingState
+                  title={meeting.title}
+                  headline={progressView.headline}
+                  detail={progressView.detail}
+                  steps={progressView.steps}
+                />
+              ) : null}
 
               <div className="absolute left-5 top-5 z-20 rounded-full border border-white/20 bg-black/35 px-3 py-1 text-xs font-medium text-slate-100 backdrop-blur">
                 {index + 1} / {meetings.length}
@@ -399,16 +738,20 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
                   Swipe up for next meeting
                 </p>
                 {generationErrors[key] ? (
-                  <p className="mt-3 rounded-lg border border-rose-300/40 bg-rose-500/20 px-2 py-1 text-xs text-rose-100">
-                    {generationErrors[key]}
-                  </p>
+                  <ErrorState
+                    message={generationErrors[key]}
+                    isRetrying={isGenerating}
+                    onRetry={() => {
+                      void handleGenerateVideo(meeting, index);
+                    }}
+                  />
                 ) : null}
               </div>
 
               <VideoControls
                 hasVideo={hasVideo}
                 isPlaying={isPlaying}
-                isGenerating={Boolean(isGeneratingByMeeting[key])}
+                isGenerating={isGenerating}
                 onTogglePlayback={() => {
                   setIsPausedByMeeting((previous) => ({
                     ...previous,

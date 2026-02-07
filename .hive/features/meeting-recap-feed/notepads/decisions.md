@@ -31,3 +31,8 @@
 - Implemented the feed UI in a dedicated `VideoFeed` client component that owns meeting loading, active-slide tracking, and recap generation actions.
 - Kept `MeetingList` available in a collapsible section on `src/app/page.tsx` while promoting `VideoFeed` as the primary full-height TikTok/Reels interaction.
 - Limited `VideoControls` to playback and recap generation only, explicitly excluding comments, likes, and sharing to stay within MVP scope.
+
+## 2026-02-07 (Task 09)
+- Used request-time polling from `VideoFeed` (`GET /api/generate-video?runId=...`) while the generation `POST` is in flight, avoiding any websocket/background queue implementation.
+- Added task-specific UI states as separate components (`GeneratingState`, `ProgressIndicator`, `ErrorState`) and kept orchestration/polling in `VideoFeed`.
+- Standardized visible pipeline copy to three feed steps: `Generating script`, `Creating clips`, and `Stitching video`, with retry surfaced from inline error state.
