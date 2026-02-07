@@ -1,0 +1,14 @@
+{
+  "status": "done",
+  "origin": "plan",
+  "planTitle": "Granola MCP Client Integration",
+  "dependsOn": [
+    "01-project-setup"
+  ],
+  "baseCommit": "23b5bf719f73d0fe21eb8f69c2cc241a6b8f8860",
+  "schemaVersion": 1,
+  "startedAt": "2026-02-07T12:24:39.641Z",
+  "idempotencyKey": "hive-meeting-recap-feed-02-granola-mcp-client-integration-1",
+  "summary": "Implemented Granola MCP integration with SDK-based OAuth session handling, tool wrappers, and API routes. Added `src/lib/mcp-client.ts`, `src/lib/granola.ts`, `src/types/granola.ts`, auth connect/callback routes, and meetings proxy route, plus a new integration test suite and updated `npm test` to run all tests. Verification: `npm test && npm run build` both pass (8/8 tests, Next.js build successful).",
+  "completedAt": "2026-02-07T12:34:13.140Z"
+}
