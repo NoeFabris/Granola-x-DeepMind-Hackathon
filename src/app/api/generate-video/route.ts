@@ -6,6 +6,9 @@ import {
 } from "@/lib/video-pipeline";
 
 export const runtime = "nodejs";
+const isVercelDeployment = process.env.VERCEL === "1" || process.env.VERCEL === "true";
+const VERCEL_DISABLED_ERROR =
+  "Video generation is disabled in Vercel deployments. Run locally for generation.";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -67,6 +70,15 @@ function isAuthErrorMessage(errorMessage: string): boolean {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (isVercelDeployment) {
+    return NextResponse.json(
+      {
+        error: VERCEL_DISABLED_ERROR,
+      },
+      { status: 501 }
+    );
+  }
+
   const accessToken = readAccessToken(request);
 
   if (!accessToken) {
@@ -133,6 +145,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  if (isVercelDeployment) {
+    return NextResponse.json(
+      {
+        error: VERCEL_DISABLED_ERROR,
+      },
+      { status: 501 }
+    );
+  }
+
   const runId = request.nextUrl.searchParams.get("runId");
 
   if (runId) {

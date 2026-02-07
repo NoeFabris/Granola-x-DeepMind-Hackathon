@@ -1,20 +1,83 @@
 import { randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static";
-import ffprobeStatic from "ffprobe-static";
 
 const DEFAULT_TRANSITION_DURATION_SECONDS = 0.35;
 const MIN_TRANSITION_DURATION_SECONDS = 0.1;
+const isVercelDeployment = process.env.VERCEL === "1" || process.env.VERCEL === "true";
+const runtimeRequire = createRequire(import.meta.url);
 
-if (ffmpegStatic) {
-  ffmpeg.setFfmpegPath(ffmpegStatic);
+function loadOptionalLocalModule(moduleName: string): unknown {
+  if (isVercelDeployment) {
+    return undefined;
+  }
+
+  try {
+    return runtimeRequire(moduleName);
+  } catch {
+    return undefined;
+  }
 }
 
-if (ffprobeStatic.path) {
-  ffmpeg.setFfprobePath(ffprobeStatic.path);
+function readModuleStringExport(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value;
+  }
+
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "default" in value &&
+    typeof value.default === "string" &&
+    value.default.trim()
+  ) {
+    return value.default;
+  }
+
+  return undefined;
+}
+
+function readModulePathExport(value: unknown): string | undefined {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "path" in value &&
+    typeof value.path === "string" &&
+    value.path.trim()
+  ) {
+    return value.path;
+  }
+
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    "default" in value &&
+    value.default !== null &&
+    typeof value.default === "object" &&
+    "path" in value.default &&
+    typeof value.default.path === "string" &&
+    value.default.path.trim()
+  ) {
+    return value.default.path;
+  }
+
+  return undefined;
+}
+
+const ffmpegPackageName = ["ffmpeg", "static"].join("-");
+const ffprobePackageName = ["ffprobe", "static"].join("-");
+const ffmpegStaticPath = readModuleStringExport(loadOptionalLocalModule(ffmpegPackageName));
+const ffprobeStaticPath = readModulePathExport(loadOptionalLocalModule(ffprobePackageName));
+
+if (ffmpegStaticPath) {
+  ffmpeg.setFfmpegPath(ffmpegStaticPath);
+}
+
+if (ffprobeStaticPath) {
+  ffmpeg.setFfprobePath(ffprobeStaticPath);
 }
 
 export interface StitchVideoOptions {
@@ -186,6 +249,10 @@ async function stitchSingleClip(inputPath: string, outputPath: string): Promise<
 }
 
 export async function stitchVideoClips(options: StitchVideoOptions): Promise<StitchVideoResult> {
+  if (isVercelDeployment) {
+    throw new Error("Video stitching is disabled on Vercel deployments.");
+  }
+
   if (!Array.isArray(options.clipUrls) || options.clipUrls.length === 0) {
     throw new Error("At least one clip URL is required for stitching.");
   }
