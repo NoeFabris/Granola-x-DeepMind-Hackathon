@@ -723,6 +723,20 @@ export function VideoFeed() {
               </div>
 
               <div className="absolute bottom-[calc(var(--safe-bottom)+1.5rem)] left-[calc(var(--safe-left)+1.25rem)] right-[calc(var(--safe-right)+1.25rem)] z-20 motion-safe:animate-[fade-up_520ms_ease-out_forwards]">
+                <VideoControls
+                  hasVideo={hasVideo}
+                  isPlaying={isPlaying}
+                  isGenerating={isGenerating}
+                  onTogglePlayback={() => {
+                    setIsPausedByMeeting((previous) => ({
+                      ...previous,
+                      [key]: !previous[key],
+                    }));
+                  }}
+                  onGenerateVideo={() => {
+                    void handleGenerateVideo(meeting, index);
+                  }}
+                />
                 <div className="relative rounded-2xl border border-white/15 bg-black/35 p-4 shadow-xl backdrop-blur sm:p-5">
                   {index === 0 && (
                     <div>
@@ -762,20 +776,6 @@ export function VideoFeed() {
                   ) : null}
                 </div>
               </div>
-              <VideoControls
-                hasVideo={hasVideo}
-                isPlaying={isPlaying}
-                isGenerating={isGenerating}
-                onTogglePlayback={() => {
-                  setIsPausedByMeeting((previous) => ({
-                    ...previous,
-                    [key]: !previous[key],
-                  }));
-                }}
-                onGenerateVideo={() => {
-                  void handleGenerateVideo(meeting, index);
-                }}
-              />
             </article>
           );
         })}
