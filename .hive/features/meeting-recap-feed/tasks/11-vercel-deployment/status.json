@@ -1,0 +1,14 @@
+{
+  "status": "done",
+  "origin": "plan",
+  "planTitle": "Vercel Deployment",
+  "dependsOn": [
+    "10-polish--responsive-design"
+  ],
+  "baseCommit": "f796e229ecdc94565794c7a73032cf69d639cb52",
+  "schemaVersion": 1,
+  "startedAt": "2026-02-07T13:46:32.157Z",
+  "idempotencyKey": "hive-meeting-recap-feed-11-vercel-deployment-1",
+  "summary": "Prepared the app for Vercel deployment: added `vercel.json` with `functions.maxDuration` for long-running API routes, expanded `.env.local.example` to document required/optional env vars and the Granola OAuth callback path, and configured `next.config.js` (`experimental.outputFileTracingIncludes`) to bundle FFmpeg binaries in serverless output. Added a regression test for deployment config and expanded `README.md` with Vercel deployment notes. Verification: `npm test` (46/46), `npm run build`, `npx tsc --noEmit` all succeeded.",
+  "completedAt": "2026-02-07T14:02:43.757Z"
+}

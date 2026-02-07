@@ -1,0 +1,14 @@
+{
+  "status": "done",
+  "origin": "plan",
+  "planTitle": "Summary Script Generator",
+  "dependsOn": [
+    "02-granola-mcp-client-integration"
+  ],
+  "baseCommit": "1cc2d542be5a9582df5bcd6ffee5bf36821a90e0",
+  "schemaVersion": 1,
+  "startedAt": "2026-02-07T12:35:53.303Z",
+  "idempotencyKey": "hive-meeting-recap-feed-03-summary-script-generator-1",
+  "summary": "Implemented Gemini-based summary script generation for meeting recaps. Added `src/lib/script-generator.ts`, `src/lib/prompts.ts`, `src/types/script.ts`, and `src/app/api/generate-script/route.ts` with POST handling that returns a script chunk array for a `meetingId`, including Granola auth/session handling and JSON parsing/validation. Added TDD coverage in `tests/summary-script-generator.test.mjs` (initially failing, now passing). Verification: `npm test` (12/12 passing), `npm run build` (Next.js build successful), and `npx tsc --noEmit` (no errors). Also appended task learnings/decisions/issues to feature notepads.",
+  "completedAt": "2026-02-07T12:41:13.014Z"
+}

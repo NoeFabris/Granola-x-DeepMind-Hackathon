@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "src/app/api/generate-video/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/generate-clips/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/stitch-video/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

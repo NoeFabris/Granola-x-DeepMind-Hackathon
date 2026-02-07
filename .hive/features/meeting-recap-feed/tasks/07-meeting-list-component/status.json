@@ -1,0 +1,14 @@
+{
+  "status": "done",
+  "origin": "plan",
+  "planTitle": "Meeting List Component",
+  "dependsOn": [
+    "02-granola-mcp-client-integration"
+  ],
+  "baseCommit": "1cc2d542be5a9582df5bcd6ffee5bf36821a90e0",
+  "schemaVersion": 1,
+  "startedAt": "2026-02-07T12:35:53.528Z",
+  "idempotencyKey": "hive-meeting-recap-feed-07-meeting-list-component-1",
+  "summary": "Implemented Granola meeting list UI with new `MeetingList`, `MeetingCard`, and `ConnectGranola` components, and updated `src/app/page.tsx` to pass OAuth callback query state (`granola=connected`) into the client list. Added task-specific RED->GREEN test coverage in `tests/meeting-list-component.test.mjs` and documented learnings/decisions/issues in feature notepads. Verification completed: `node --test tests/meeting-list-component.test.mjs`, then `npm test && npm run build && npx tsc --noEmit` all passed.",
+  "completedAt": "2026-02-07T12:40:46.191Z"
+}

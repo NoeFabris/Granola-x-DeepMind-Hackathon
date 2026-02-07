@@ -1,0 +1,14 @@
+{
+  "status": "done",
+  "origin": "plan",
+  "planTitle": "Full Video Generation Pipeline",
+  "dependsOn": [
+    "05-video-stitching-service"
+  ],
+  "baseCommit": "1d73f2ed6fdc34d16fe67e40c76b40002a096bc4",
+  "schemaVersion": 1,
+  "startedAt": "2026-02-07T12:54:16.909Z",
+  "idempotencyKey": "hive-meeting-recap-feed-06-full-video-generation-pipeline-1",
+  "summary": "Implemented full end-to-end video generation orchestration in `src/lib/video-pipeline.ts` and added `src/app/api/generate-video/route.ts` with a single endpoint flow: `POST` runs meeting -> script -> clips -> stitch and returns final `videoUrl`, `GET ?runId=` returns progress for UI polling, and `GET ?videoId=` serves temporarily stored playback video bytes from in-memory TTL storage. Added RED->GREEN coverage in `tests/full-video-generation-pipeline.test.mjs` and appended Task 06 entries to learnings/decisions/issues notepads. Verification run: `node --test tests/full-video-generation-pipeline.test.mjs`, then `npm test && npm run build && npx tsc --noEmit` (all passing; installed missing dependencies with `npm install` in worktree before final verification).",
+  "completedAt": "2026-02-07T13:01:28.969Z"
+}

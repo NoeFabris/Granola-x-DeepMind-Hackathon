@@ -1,0 +1,12 @@
+{
+  "status": "done",
+  "origin": "plan",
+  "planTitle": "Project Setup",
+  "dependsOn": [],
+  "baseCommit": "994d6afe423a6c3aefa674aaf389808a5c36ab0f",
+  "schemaVersion": 1,
+  "startedAt": "2026-02-07T12:17:08.025Z",
+  "idempotencyKey": "hive-meeting-recap-feed-01-project-setup-1",
+  "summary": "Initialized a Next.js 14 App Router project with TypeScript and Tailwind CSS, added @modelcontextprotocol/sdk, created required setup files including src/app layout/page and .env.local.example, added a baseline setup test, and verified with npm test, npm run build, npm run dev (homepage placeholder check), and npx tsc --noEmit.",
+  "completedAt": "2026-02-07T12:22:35.140Z"
+}
