@@ -36,3 +36,8 @@
 - Used request-time polling from `VideoFeed` (`GET /api/generate-video?runId=...`) while the generation `POST` is in flight, avoiding any websocket/background queue implementation.
 - Added task-specific UI states as separate components (`GeneratingState`, `ProgressIndicator`, `ErrorState`) and kept orchestration/polling in `VideoFeed`.
 - Standardized visible pipeline copy to three feed steps: `Generating script`, `Creating clips`, and `Stitching video`, with retry surfaced from inline error state.
+
+## 2026-02-07 (Task 10)
+- Implemented dark-mode support via lightweight CSS variables in `src/app/globals.css` with `@media (prefers-color-scheme: dark)` (no theme toggle/settings UI).
+- Kept the header as a dedicated `Header` component overlaid on the feed from `src/app/page.tsx` to keep branding consistent without changing feed logic.
+- Used safe-area-aware positioning (CSS `env(safe-area-inset-*)` through `--safe-*` variables) for overlay elements and controls to improve mobile ergonomics.

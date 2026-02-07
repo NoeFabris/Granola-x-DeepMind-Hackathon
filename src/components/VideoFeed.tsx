@@ -626,7 +626,7 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
 
   if (isLoadingMeetings) {
     return (
-      <section className="flex h-screen items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] text-slate-200">
+      <section className="flex h-screen h-[100dvh] items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] text-slate-200">
         <p className="rounded-full border border-white/20 bg-black/25 px-5 py-2 text-sm tracking-wide">
           Loading meetings...
         </p>
@@ -636,7 +636,7 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
 
   if (!isConnected) {
     return (
-      <section className="flex h-screen items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] p-6 text-slate-100">
+      <section className="flex h-screen h-[100dvh] items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] p-6 text-slate-100">
         <div className="w-full max-w-md rounded-3xl border border-white/20 bg-black/30 p-7 text-center shadow-2xl backdrop-blur">
           <p className="text-xs uppercase tracking-[0.24em] text-emerald-200">Meeting recap feed</p>
           <h2 className="mt-4 text-2xl font-semibold">Connect Granola to start swiping recaps</h2>
@@ -658,7 +658,7 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
 
   if (meetings.length === 0) {
     return (
-      <section className="flex h-screen items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] p-6 text-slate-100">
+      <section className="flex h-screen h-[100dvh] items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] p-6 text-slate-100">
         <div className="max-w-md rounded-3xl border border-white/20 bg-black/30 p-7 text-center shadow-2xl backdrop-blur">
           <h2 className="text-xl font-semibold">No meetings found</h2>
           <p className="mt-3 text-sm text-slate-300">
@@ -671,13 +671,13 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
   }
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-slate-950 text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-black/75 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-44 bg-gradient-to-t from-black/80 to-transparent" />
+    <section className="relative h-screen h-[100dvh] w-full overflow-hidden bg-slate-950 text-white">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-32 bg-gradient-to-b from-black/75 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-48 bg-gradient-to-t from-black/80 to-transparent" />
 
       <div
         ref={feedRef}
-        className="h-screen snap-y snap-mandatory overflow-y-auto overscroll-y-contain"
+        className="ios-scroll scrollbar-hidden h-screen h-[100dvh] snap-y snap-mandatory overflow-y-auto overscroll-y-contain touch-pan-y"
       >
         {meetings.map((meeting, index) => {
           const key = meetingKey(meeting, index);
@@ -699,7 +699,7 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
               ref={(node) => {
                 setSlideRef(index, node);
               }}
-              className="relative h-screen snap-start"
+              className="relative h-screen h-[100dvh] snap-start"
             >
               <VideoPlayer
                 videoUrl={videoByMeeting[key]}
@@ -717,11 +717,11 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
                 />
               ) : null}
 
-              <div className="absolute left-5 top-5 z-20 rounded-full border border-white/20 bg-black/35 px-3 py-1 text-xs font-medium text-slate-100 backdrop-blur">
+              <div className="absolute right-[calc(var(--safe-right)+1.25rem)] top-[calc(var(--safe-top)+1rem)] z-20 rounded-full border border-white/20 bg-black/35 px-3 py-1 text-xs font-medium text-slate-100 backdrop-blur motion-safe:animate-[fade-up_500ms_ease-out_forwards]">
                 {index + 1} / {meetings.length}
               </div>
 
-              <div className="absolute bottom-7 left-5 right-24 z-20 rounded-2xl border border-white/15 bg-black/35 p-4 shadow-xl backdrop-blur">
+              <div className="absolute bottom-[calc(var(--safe-bottom)+1.5rem)] left-[calc(var(--safe-left)+1.25rem)] right-[calc(var(--safe-right)+6rem)] z-20 rounded-2xl border border-white/15 bg-black/35 p-4 shadow-xl backdrop-blur motion-safe:animate-[fade-up_520ms_ease-out_forwards] sm:p-5">
                 <p className="text-xs uppercase tracking-[0.22em] text-emerald-200">Meeting recap</p>
                 <h3 className="mt-2 text-xl font-semibold leading-tight">{meeting.title}</h3>
                 <ul className="mt-3 space-y-1 text-sm text-slate-100">

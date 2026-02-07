@@ -105,27 +105,27 @@ export function MeetingList({ initialConnected = false }: MeetingListProps) {
   }, [isConnected]);
 
   return (
-    <section className="w-full max-w-md rounded-xl border border-slate-200 bg-slate-50 p-4">
+    <section className="w-full max-w-2xl rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-5 shadow-xl backdrop-blur motion-safe:animate-[fade-up_520ms_ease-out_forwards]">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Recent meetings</h2>
-          <p className="text-sm text-slate-600">From your Granola account</p>
+          <h2 className="text-lg font-semibold text-[color:var(--app-fg)]">Recent meetings</h2>
+          <p className="text-sm text-[color:var(--app-muted)]">From your Granola account</p>
         </div>
         <ConnectGranola connected={isConnected} connectUrl={connectUrl} />
       </div>
 
       {isLoadingMeetings ? (
-        <p className="mt-4 text-sm text-slate-600">Loading meetings...</p>
+        <p className="mt-4 text-sm text-[color:var(--app-muted)]">Loading meetings...</p>
       ) : null}
 
       {!isLoadingMeetings && error ? (
-        <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        <p className="mt-4 rounded-xl border border-rose-300/40 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-100">
           {error}
         </p>
       ) : null}
 
       {!isLoadingMeetings && !error && meetings.length === 0 ? (
-        <p className="mt-4 rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-600">
+        <p className="mt-4 rounded-xl border border-[color:var(--panel-border)] bg-white/60 p-3 text-sm text-[color:var(--app-muted)] dark:bg-white/5">
           {emptyStateLabel}
         </p>
       ) : null}
