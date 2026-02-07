@@ -1,6 +1,6 @@
 # GranolaTok: Granola-x-DeepMind-Hackathon
 
-🚀 **[GranolaTok Live Demo](https://granola-tok.vercel.app/demo)** | 📺 **[Watch Demo](https://www.youtube.com/watch?v=7GLjnvTdOpk)** 🚀
+🚀 **[Watch YouTube Demo](https://www.youtube.com/watch?v=7GLjnvTdOpk)** | **[GranolaTok Live Demo](https://granola-tok.vercel.app/demo)** 🚀
 
 **Your Granola meeting notes, but watchable.**
 
