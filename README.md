@@ -15,6 +15,8 @@ GranolaTok turns your meeting transcripts from [Granola](https://www.granola.ai/
 
 ![GranolaTok Hack Photo](hack.jpg)
 
+[GranolaTok Live Demo](https://granola-tok.vercel.app/)
+
 Next.js app that connects to Granola via the official MCP server, generates a short recap script with Gemini, renders TikTok-style Veo clips, and stitches them into a single vertical video.
 
 ## Local Development
