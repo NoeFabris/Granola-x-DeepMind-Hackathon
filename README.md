@@ -1,6 +1,10 @@
 # GranolaTok: Granola-x-DeepMind-Hackathon
 
+🚀 **[GranolaTok Live Demo](https://granola-tok.vercel.app/demo)** | 📺 **[Watch Demo](https://www.youtube.com/watch?v=7GLjnvTdOpk)** 🚀
+
 **Your Granola meeting notes, but watchable.**
+
+> **Note:** You can use your own API key in the normal app, or check out our pre-configured demo at [/demo](https://granola-tok.vercel.app/demo).
 
 ## About the Project
 GranolaTok turns your meeting transcripts from [Granola](https://www.granola.ai/) into short, scrollable, TikTok-style video recaps. Powered by **Gemini**, it extracts the most important moments—decisions, action items, and highlights—providing a format your brain already craves.
@@ -13,9 +17,9 @@ GranolaTok turns your meeting transcripts from [Granola](https://www.granola.ai/
 
 *Wait—why read a memo when you can watch a TikTok?*
 
-![GranolaTok Hack Photo](hack.jpg)
+<img src="hack.jpg" alt="GranolaTok Hack Photo" height="400" />
 
-[GranolaTok Live Demo](https://granola-tok.vercel.app/)
+[GranolaTok Live Demo](https://granola-tok.vercel.app/demo) | [Watch our Demo Video](https://www.youtube.com/watch?v=7GLjnvTdOpk)
 
 Next.js app that connects to Granola via the official MCP server, generates a short recap script with Gemini, renders TikTok-style Veo clips, and stitches them into a single vertical video.
 
@@ -35,4 +39,4 @@ Next.js app that connects to Granola via the official MCP server, generates a sh
 ## Notes
 
 - Granola OAuth session state and generated video playback assets are stored in-memory (serverless cold starts will clear them). For production durability, move these to a persistent store.
->>>>>>> mvp
+
