@@ -7,34 +7,13 @@ import type { GranolaMeeting } from "@/types/granola";
 
 interface MeetingsPayload {
   meetings?: GranolaMeeting[];
-  authUrl?: string;
-  connectUrl?: string;
   error?: string;
 }
 
-interface MeetingListProps {
-  initialConnected?: boolean;
-}
-
-const DEFAULT_CONNECT_URL = "/api/auth/granola/connect";
-
-function parseConnectUrl(payload: MeetingsPayload): string {
-  if (typeof payload.authUrl === "string" && payload.authUrl.length > 0) {
-    return payload.authUrl;
-  }
-
-  if (typeof payload.connectUrl === "string" && payload.connectUrl.length > 0) {
-    return payload.connectUrl;
-  }
-
-  return DEFAULT_CONNECT_URL;
-}
-
-export function MeetingList({ initialConnected = false }: MeetingListProps) {
+export function MeetingList() {
   const [meetings, setMeetings] = useState<GranolaMeeting[]>([]);
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
-  const [isConnected, setIsConnected] = useState(initialConnected);
-  const [connectUrl, setConnectUrl] = useState(DEFAULT_CONNECT_URL);
+  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,9 +32,8 @@ export function MeetingList({ initialConnected = false }: MeetingListProps) {
           return;
         }
 
-        if (response.status === 401) {
+        if (response.status === 503) {
           setIsConnected(false);
-          setConnectUrl(parseConnectUrl(payload));
           setMeetings([]);
           setError(null);
           return;
@@ -98,7 +76,7 @@ export function MeetingList({ initialConnected = false }: MeetingListProps) {
 
   const emptyStateLabel = useMemo(() => {
     if (!isConnected) {
-      return "Connect Granola to load your recent meetings.";
+      return "Set GRANOLA_API_TOKEN to load your recent meetings.";
     }
 
     return "No meetings available yet.";
@@ -111,7 +89,7 @@ export function MeetingList({ initialConnected = false }: MeetingListProps) {
           <h2 className="text-lg font-semibold text-[color:var(--app-fg)]">Recent meetings</h2>
           <p className="text-sm text-[color:var(--app-muted)]">From your Granola account</p>
         </div>
-        <ConnectGranola connected={isConnected} connectUrl={connectUrl} />
+        <ConnectGranola connected={isConnected} />
       </div>
 
       {isLoadingMeetings ? (

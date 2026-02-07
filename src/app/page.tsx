@@ -2,22 +2,11 @@ import { MeetingList } from "@/components/MeetingList";
 import { Header } from "@/components/Header";
 import { VideoFeed } from "@/components/VideoFeed";
 
-interface HomePageProps {
-  searchParams?: {
-    granola?: string | string[];
-  };
-}
-
-export default function HomePage({ searchParams }: HomePageProps) {
-  const granolaStatus = Array.isArray(searchParams?.granola)
-    ? searchParams?.granola[0]
-    : searchParams?.granola;
-  const initialConnected = granolaStatus === "connected";
-
+export default function HomePage() {
   return (
     <main className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)]">
       <div className="relative">
-        <VideoFeed initialConnected={initialConnected} />
+        <VideoFeed />
         <Header title="Meeting Recap Feed" />
       </div>
 
@@ -27,7 +16,7 @@ export default function HomePage({ searchParams }: HomePageProps) {
             Open meeting list
           </summary>
           <div className="mt-4 flex justify-center">
-            <MeetingList initialConnected={initialConnected} />
+            <MeetingList />
           </div>
         </details>
       </div>

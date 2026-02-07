@@ -1,13 +1,12 @@
 import { getDocumentSummary } from "@/lib/granola";
 import { buildScriptPrompt } from "@/lib/prompts";
-import type { GranolaClientContext, GranolaProxyResult } from "@/types/granola";
 import type { GeneratedMeetingScript, ScriptChunk } from "@/types/script";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
 const DEFAULT_MODEL = process.env.GEMINI_SCRIPT_MODEL ?? "gemini-2.0-flash";
 const DEFAULT_CHUNK_SECONDS = 8;
 
-interface GenerateMeetingScriptOptions extends GranolaClientContext {
+interface GenerateMeetingScriptOptions {
   meetingId: string;
 }
 
@@ -169,25 +168,16 @@ export async function generateScriptFromSummary(summary: string): Promise<Script
 
 export async function generateMeetingScript(
   options: GenerateMeetingScriptOptions
-): Promise<GranolaProxyResult<GeneratedMeetingScript>> {
+): Promise<GeneratedMeetingScript> {
   const summaryResult = await getDocumentSummary({
-    sessionId: options.sessionId,
-    callbackBaseUrl: options.callbackBaseUrl,
     documentId: options.meetingId,
   });
 
-  if (summaryResult.status === "auth_required") {
-    return summaryResult;
-  }
-
-  const chunks = await generateScriptFromSummary(summaryResult.data.summary);
+  const chunks = await generateScriptFromSummary(summaryResult.summary);
 
   return {
-    status: "ok",
-    data: {
-      meetingId: options.meetingId,
-      summary: summaryResult.data.summary,
-      chunks,
-    },
+    meetingId: options.meetingId,
+    summary: summaryResult.summary,
+    chunks,
   };
 }
