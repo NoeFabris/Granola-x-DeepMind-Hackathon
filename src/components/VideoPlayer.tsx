@@ -49,7 +49,7 @@ export function VideoPlayer({ videoUrl, isActive, isPaused, title }: VideoPlayer
   return (
     <video
       ref={videoRef}
-      className="absolute inset-0 h-full w-full object-cover [transform:translateZ(0)]"
+      className="absolute inset-0 h-full w-full object-contain [transform:translateZ(0)]"
       src={videoUrl}
       muted
       playsInline

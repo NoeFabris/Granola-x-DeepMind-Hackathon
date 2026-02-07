@@ -722,33 +722,46 @@ export function VideoFeed() {
                 {index + 1} / {meetings.length}
               </div>
 
-              <div className="absolute bottom-[calc(var(--safe-bottom)+1.5rem)] left-[calc(var(--safe-left)+1.25rem)] right-[calc(var(--safe-right)+6rem)] z-20 rounded-2xl border border-white/15 bg-black/35 p-4 shadow-xl backdrop-blur motion-safe:animate-[fade-up_520ms_ease-out_forwards] sm:p-5">
-                <p className="text-xs uppercase tracking-[0.22em] text-emerald-200">Meeting recap</p>
-                <h3 className="mt-2 text-xl font-semibold leading-tight">{meeting.title}</h3>
-                <ul className="mt-3 space-y-1 text-sm text-slate-100">
-                  {keyPoints.map((point, pointIndex) => (
-                    <li key={`${key}-${pointIndex}`} className="flex gap-2">
-                      <span aria-hidden className="text-emerald-300">
-                        -
-                      </span>
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-200">
-                  Swipe up for next meeting
-                </p>
-                {generationErrors[key] ? (
-                  <ErrorState
-                    message={generationErrors[key]}
-                    isRetrying={isGenerating}
-                    onRetry={() => {
-                      void handleGenerateVideo(meeting, index);
-                    }}
-                  />
-                ) : null}
-              </div>
+              <div className="absolute bottom-[calc(var(--safe-bottom)+1.5rem)] left-[calc(var(--safe-left)+1.25rem)] right-[calc(var(--safe-right)+1.25rem)] z-20 motion-safe:animate-[fade-up_520ms_ease-out_forwards]">
+                <div className="relative rounded-2xl border border-white/15 bg-black/35 p-4 shadow-xl backdrop-blur sm:p-5">
+                  {index === 0 && (
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.22em] text-emerald-200">
+                        Meeting recap
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold leading-tight">{meeting.title}</h3>
+                      <ul className="mt-3 space-y-1 text-sm text-slate-100">
+                        {keyPoints.map((point, pointIndex) => (
+                          <li key={`${key}-${pointIndex}`} className="flex gap-2">
+                            <span aria-hidden className="text-emerald-300">
+                              -
+                            </span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-200">
+                        Swipe up for next meeting
+                      </p>
+                    </div>
+                  )}
+                  {index !== 0 && (
+                    <div>
+                      <h3 className="text-xl font-semibold leading-tight">{meeting.title}</h3>
+                    </div>
+                  )}
 
+                  {generationErrors[key] ? (
+                    <ErrorState
+                      message={generationErrors[key]}
+                      isRetrying={isGenerating}
+                      onRetry={() => {
+                        void handleGenerateVideo(meeting, index);
+                      }}
+                    />
+                  ) : null}
+                </div>
+              </div>
               <VideoControls
                 hasVideo={hasVideo}
                 isPlaying={isPlaying}

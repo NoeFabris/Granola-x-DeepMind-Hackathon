@@ -21,7 +21,7 @@ export function VideoControls({
       : "Generate recap";
 
   return (
-    <div className="absolute bottom-[calc(var(--safe-bottom)+1.75rem)] right-[calc(var(--safe-right)+1.25rem)] z-20 flex flex-col gap-2.5 sm:gap-3">
+    <div className="absolute bottom-[calc(var(--safe-bottom)+2rem)] right-[calc(var(--safe-right)+1.25rem)] z-20 flex flex-col gap-2.5 sm:gap-3">
       <button
         type="button"
         onClick={onTogglePlayback}
