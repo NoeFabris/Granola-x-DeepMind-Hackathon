@@ -42,3 +42,8 @@
 - `h-[100dvh]` (dynamic viewport units) provides a more stable full-height feed on mobile browsers compared to `h-screen` alone.
 - Safe-area inset CSS variables (`--safe-top`, `--safe-bottom`, etc.) combined with Tailwind `calc(...)` arbitrary values keep overlays readable on notched devices.
 - A couple of global utilities (`.scrollbar-hidden`, `.ios-scroll`) are enough to make the snap feed feel more native without adding a Tailwind plugin.
+
+## 2026-02-07 (Task 11)
+- In Next.js 14, `outputFileTracingIncludes` must live under `experimental` in `next.config.js` (top-level key emits an invalid-config warning and is ignored).
+- Vercel `functions` config in `vercel.json` supports `maxDuration` by matching function source paths via glob patterns (useful for long-running API routes).
+- For Next.js deployments on Vercel, `vercel.json` `includeFiles`/`excludeFiles` are not supported; use Next output file tracing config to ensure native binaries (FFmpeg) are bundled.
