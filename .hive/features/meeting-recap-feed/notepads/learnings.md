@@ -27,3 +27,8 @@
 - A pipeline-level in-memory run registry (`runId` + progress events) provides a low-overhead way for UI polling without introducing a queue system.
 - Allowing clients to optionally pass their own `runId` on `POST /api/generate-video` enables progress polling in parallel with the long-running generation request.
 - Converting stitched data URLs into temporary binary assets and serving them via `GET /api/generate-video?videoId=...` keeps playback efficient while staying within the no-persistence MVP scope.
+
+## 2026-02-07 (Task 08)
+- Vertical `snap-y` containers combined with `IntersectionObserver` are enough to detect the active slide and drive play/pause behavior for a swipe-style feed.
+- Keeping playback/generation state keyed by meeting id makes it straightforward to preserve per-meeting controls while users scroll between videos.
+- Reusing the existing `POST /api/generate-video` pipeline endpoint from feed controls avoids duplicating orchestration logic in the UI layer.

@@ -15,3 +15,6 @@
 
 ## 2026-02-07 (Task 06)
 - `next build` initially failed in the task worktree because FFmpeg dependencies were not installed locally (`fluent-ffmpeg`, `ffmpeg-static`, `ffprobe-static` module resolution errors); resolved by running `npm install` in the worktree before verification.
+
+## 2026-02-07 (Task 08)
+- `npm run build` initially failed in this worktree due missing FFmpeg-related dependencies in local `node_modules`; resolved by running `npm install` before final verification.

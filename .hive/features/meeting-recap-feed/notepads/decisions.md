@@ -26,3 +26,8 @@
 - Implemented full orchestration in `src/lib/video-pipeline.ts` to centralize meeting -> script -> clips -> stitch flow and keep `/api/generate-video` route thin.
 - Used a single endpoint strategy: `POST /api/generate-video` for generation, plus `GET /api/generate-video?runId=...` (progress) and `GET /api/generate-video?videoId=...` (temporary playback) to support UI updates without adding extra routes.
 - Chose in-memory TTL storage for generated videos and pipeline runs to satisfy temporary playback/progress requirements while explicitly avoiding persistent storage and queue infrastructure.
+
+## 2026-02-07 (Task 08)
+- Implemented the feed UI in a dedicated `VideoFeed` client component that owns meeting loading, active-slide tracking, and recap generation actions.
+- Kept `MeetingList` available in a collapsible section on `src/app/page.tsx` while promoting `VideoFeed` as the primary full-height TikTok/Reels interaction.
+- Limited `VideoControls` to playback and recap generation only, explicitly excluding comments, likes, and sharing to stay within MVP scope.
