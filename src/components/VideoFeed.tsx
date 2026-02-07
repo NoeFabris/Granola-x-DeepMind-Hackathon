@@ -9,14 +9,8 @@ import { VideoControls } from "@/components/VideoControls";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import type { GranolaMeeting } from "@/types/granola";
 
-interface VideoFeedProps {
-  initialConnected?: boolean;
-}
-
 interface MeetingsPayload {
   meetings?: GranolaMeeting[];
-  authUrl?: string;
-  connectUrl?: string;
   error?: string;
 }
 
@@ -30,8 +24,6 @@ interface VideoPipelineProgressEvent {
 interface GeneratedVideoPayload {
   videoUrl?: string;
   runId?: string;
-  authUrl?: string;
-  connectUrl?: string;
   error?: string;
   progress?: VideoPipelineProgressEvent[];
 }
@@ -49,7 +41,6 @@ interface GenerationProgressSnapshot {
   progress: VideoPipelineProgressEvent[];
 }
 
-const DEFAULT_CONNECT_URL = "/api/auth/granola/connect";
 const STEP_LABELS: Record<PipelineStep, string> = {
   script: "Generating script",
   clips: "Creating clips",
@@ -58,18 +49,6 @@ const STEP_LABELS: Record<PipelineStep, string> = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-function parseConnectUrl(payload: MeetingsPayload | GeneratedVideoPayload): string {
-  if (typeof payload.authUrl === "string" && payload.authUrl.length > 0) {
-    return payload.authUrl;
-  }
-
-  if (typeof payload.connectUrl === "string" && payload.connectUrl.length > 0) {
-    return payload.connectUrl;
-  }
-
-  return DEFAULT_CONNECT_URL;
 }
 
 function meetingKey(meeting: GranolaMeeting, index: number): string {
@@ -304,11 +283,10 @@ function buildProgressView(
   };
 }
 
-export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
+export function VideoFeed() {
   const [meetings, setMeetings] = useState<GranolaMeeting[]>([]);
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
-  const [isConnected, setIsConnected] = useState(initialConnected);
-  const [connectUrl, setConnectUrl] = useState(DEFAULT_CONNECT_URL);
+  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [videoByMeeting, setVideoByMeeting] = useState<Record<string, string>>({});
@@ -343,9 +321,8 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
           return;
         }
 
-        if (response.status === 401) {
+        if (response.status === 503) {
           setIsConnected(false);
-          setConnectUrl(parseConnectUrl(payload));
           setMeetings([]);
           setError(null);
           return;
@@ -527,8 +504,7 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
 
           if (
             runPayload.status === "completed" ||
-            runPayload.status === "failed" ||
-            runPayload.status === "auth_required"
+            runPayload.status === "failed"
           ) {
             keepPolling = false;
           }
@@ -571,15 +547,11 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
         }));
       }
 
-      if (response.status === 401) {
+      if (response.status === 503) {
         setIsConnected(false);
-        setConnectUrl(parseConnectUrl(payload));
         setGenerationErrors((previous) => ({
           ...previous,
-          [key]:
-            typeof payload.error === "string" && payload.error.trim().length > 0
-              ? payload.error
-              : "Granola connection required to generate this recap.",
+          [key]: "Granola is not configured. Set GRANOLA_API_TOKEN.",
         }));
         return;
       }
@@ -639,12 +611,12 @@ export function VideoFeed({ initialConnected = false }: VideoFeedProps) {
       <section className="flex h-screen h-[100dvh] items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] p-6 text-slate-100">
         <div className="w-full max-w-md rounded-3xl border border-white/20 bg-black/30 p-7 text-center shadow-2xl backdrop-blur">
           <p className="text-xs uppercase tracking-[0.24em] text-emerald-200">Meeting recap feed</p>
-          <h2 className="mt-4 text-2xl font-semibold">Connect Granola to start swiping recaps</h2>
+          <h2 className="mt-4 text-2xl font-semibold">Configure Granola to start swiping recaps</h2>
           <p className="mt-3 text-sm text-slate-300">
-            Authorize your account to load meetings and generate TikTok-style recap videos.
+            Set the GRANOLA_API_TOKEN environment variable to load meetings and generate TikTok-style recap videos.
           </p>
           <div className="mt-6 flex justify-center">
-            <ConnectGranola connected={false} connectUrl={connectUrl} />
+            <ConnectGranola connected={false} />
           </div>
           {error ? (
             <p className="mt-4 rounded-lg border border-rose-200/50 bg-rose-500/20 px-3 py-2 text-sm text-rose-100">

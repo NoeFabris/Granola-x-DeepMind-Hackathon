@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GRANOLA_SESSION_COOKIE_NAME } from "@/lib/mcp-client";
+import { isGranolaConfigured } from "@/lib/granola";
 import { generateMeetingScript } from "@/lib/script-generator";
 
 export const runtime = "nodejs";
@@ -21,15 +21,12 @@ function readMeetingId(payload: unknown): string | undefined {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const sessionId = request.cookies.get(GRANOLA_SESSION_COOKIE_NAME)?.value;
-
-  if (!sessionId) {
+  if (!isGranolaConfigured()) {
     return NextResponse.json(
       {
-        error: "Granola is not connected.",
-        connectUrl: "/api/auth/granola/connect",
+        error: "Granola is not configured. Set the GRANOLA_API_TOKEN environment variable.",
       },
-      { status: 401 }
+      { status: 503 }
     );
   }
 
@@ -58,23 +55,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const scriptResult = await generateMeetingScript({
-      sessionId,
-      callbackBaseUrl: request.nextUrl.origin,
-      meetingId,
-    });
-
-    if (scriptResult.status === "auth_required") {
-      return NextResponse.json(
-        {
-          error: "Granola authorization is required.",
-          authUrl: scriptResult.authUrl,
-        },
-        { status: 401 }
-      );
-    }
-
-    return NextResponse.json(scriptResult.data.chunks);
+    const script = await generateMeetingScript({ meetingId });
+    return NextResponse.json(script.chunks);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown script generation error.";

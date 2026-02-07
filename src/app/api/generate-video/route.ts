@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GRANOLA_SESSION_COOKIE_NAME } from "@/lib/mcp-client";
+import { isGranolaConfigured } from "@/lib/granola";
 import {
   generateMeetingVideo,
   getStoredVideoAsset,
@@ -36,21 +36,14 @@ function readOptionalRunId(payload: unknown): string | undefined {
   return undefined;
 }
 
-function buildNoGranolaConnectionResponse(): NextResponse {
-  return NextResponse.json(
-    {
-      error: "Granola is not connected.",
-      connectUrl: "/api/auth/granola/connect",
-    },
-    { status: 401 }
-  );
-}
-
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const sessionId = request.cookies.get(GRANOLA_SESSION_COOKIE_NAME)?.value;
-
-  if (!sessionId) {
-    return buildNoGranolaConnectionResponse();
+  if (!isGranolaConfigured()) {
+    return NextResponse.json(
+      {
+        error: "Granola is not configured. Set the GRANOLA_API_TOKEN environment variable.",
+      },
+      { status: 503 }
+    );
   }
 
   let payload: unknown;
@@ -80,21 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const generationResult = await generateMeetingVideo({
     meetingId,
     runId: readOptionalRunId(payload),
-    sessionId,
-    callbackBaseUrl: request.nextUrl.origin,
   });
-
-  if (generationResult.status === "auth_required") {
-    return NextResponse.json(
-      {
-        error: "Granola authorization is required.",
-        runId: generationResult.runId,
-        authUrl: generationResult.authUrl,
-        progress: generationResult.progress,
-      },
-      { status: 401 }
-    );
-  }
 
   if (generationResult.status === "failed") {
     return NextResponse.json(

@@ -2,12 +2,11 @@ import { randomUUID } from "node:crypto";
 import { generateMeetingScript } from "@/lib/script-generator";
 import { generateVeoClips } from "@/lib/veo";
 import { stitchVideoClips } from "@/lib/video-stitcher";
-import type { GranolaClientContext } from "@/types/granola";
 
 const RUN_TTL_MS = 60 * 60 * 1000;
 const VIDEO_TTL_MS = 30 * 60 * 1000;
 
-export type VideoPipelineRunStatus = "running" | "completed" | "failed" | "auth_required";
+export type VideoPipelineRunStatus = "running" | "completed" | "failed";
 
 export type VideoPipelineStep =
   | "pipeline"
@@ -36,7 +35,6 @@ export interface VideoGenerationRun {
   videoId?: string;
   videoUrl?: string;
   mimeType?: string;
-  authUrl?: string;
   error?: string;
 }
 
@@ -55,7 +53,7 @@ interface StoredVideoPlayback {
   expiresAt: string;
 }
 
-interface GenerateMeetingVideoOptions extends GranolaClientContext {
+interface GenerateMeetingVideoOptions {
   meetingId: string;
   runId?: string;
 }
@@ -74,12 +72,6 @@ export type GenerateMeetingVideoResult =
   | {
       status: "ok";
       data: GeneratedMeetingVideo;
-    }
-  | {
-      status: "auth_required";
-      runId: string;
-      authUrl: string;
-      progress: VideoPipelineProgressEvent[];
     }
   | {
       status: "failed";
@@ -274,44 +266,18 @@ export async function generateMeetingVideo(
     appendProgress(run, "script", "running", "Generating meeting recap script.");
     const scriptResult = await generateMeetingScript({
       meetingId: options.meetingId,
-      sessionId: options.sessionId,
-      callbackBaseUrl: options.callbackBaseUrl,
     });
-
-    if (scriptResult.status === "auth_required") {
-      run.status = "auth_required";
-      run.authUrl = scriptResult.authUrl;
-      appendProgress(
-        run,
-        "script",
-        "failed",
-        "Granola authorization required to read meeting summary."
-      );
-      appendProgress(
-        run,
-        "pipeline",
-        "failed",
-        "Pipeline stopped because Granola authorization is required."
-      );
-
-      return {
-        status: "auth_required",
-        runId: run.runId,
-        authUrl: scriptResult.authUrl,
-        progress: cloneProgress(run.progress),
-      };
-    }
 
     appendProgress(
       run,
       "script",
       "completed",
-      `Generated ${scriptResult.data.chunks.length} script chunks.`
+      `Generated ${scriptResult.chunks.length} script chunks.`
     );
 
     appendProgress(run, "clips", "running", "Generating Veo clips from script chunks.");
     const clips = await generateVeoClips({
-      chunks: scriptResult.data.chunks,
+      chunks: scriptResult.chunks,
       aspectRatio: "9:16",
     });
     const clipUrls = extractHostedClipUrls(clips);
