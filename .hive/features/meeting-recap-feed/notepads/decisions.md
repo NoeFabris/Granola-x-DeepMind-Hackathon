@@ -11,3 +11,8 @@
 - Implemented `MeetingList` as a client component responsible for fetching `/api/meetings`, handling loading/error/empty states, and deriving connected/disconnected status from API responses.
 - Kept OAuth trigger behavior isolated in a dedicated `ConnectGranola` component with `window.location.assign("/api/auth/granola/connect")` semantics for a direct server-side OAuth flow.
 - Passed `searchParams.granola` from `src/app/page.tsx` into `MeetingList` as `initialConnected` so callback redirects (`/?granola=connected`) immediately reflect connected state in the UI.
+
+## 2026-02-07 (Task 04)
+- Implemented Veo integration through direct Gemini REST calls in `src/lib/veo.ts` (`:generateVideos` + operation polling) to avoid adding another SDK dependency.
+- Standardized clip generation on `9:16` as the route default to match TikTok-style output requirements.
+- Designed `/api/generate-clips` to return a plain array of video URL/buffer strings so downstream feed assembly can consume clips without additional response mapping.
