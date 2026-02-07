@@ -40,6 +40,7 @@ export interface VideoGenerationRun {
 interface GenerateMeetingVideoOptions {
   meetingId: string;
   runId?: string;
+  summary?: string;
 }
 
 export interface GeneratedMeetingVideo {
@@ -175,7 +176,11 @@ function markRunFailed(run: VideoGenerationRun, message: string): void {
 }
 
 async function downloadAndSave(url: string, meetingId: string): Promise<string> {
-  const response = await fetch(url);
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  const downloadUrl = apiKey
+    ? `${url}${url.includes("?") ? "&" : "?"}key=${encodeURIComponent(apiKey)}`
+    : url;
+  const response = await fetch(downloadUrl);
 
   if (!response.ok) {
     throw new Error(`Failed to download video: ${response.status}`);
@@ -185,7 +190,7 @@ async function downloadAndSave(url: string, meetingId: string): Promise<string> 
   const videosDir = join(process.cwd(), "public", "videos");
   await mkdir(videosDir, { recursive: true });
 
-  const filename = `${meetingId}.mp4`;
+  const filename = `${meetingId}-${Date.now()}.mp4`;
   const filePath = join(videosDir, filename);
   await writeFile(filePath, buffer);
 
@@ -199,13 +204,19 @@ export async function generateMeetingVideo(
 
   try {
     appendProgress(run, "summary", "running", "Fetching meeting summary from Granola.");
-    const summaryResult = await getDocumentSummary({
-      documentId: options.meetingId,
-    });
+    let summary: string;
+    if (options.summary?.trim()) {
+      summary = options.summary.trim();
+    } else {
+      const summaryResult = await getDocumentSummary({
+        documentId: options.meetingId,
+      });
+      summary = summaryResult.summary;
+    }
     appendProgress(run, "summary", "completed", "Meeting summary retrieved.");
 
     appendProgress(run, "prompt", "running", "Generating video prompt from summary.");
-    const videoPrompt = await generateVideoPrompt(summaryResult.summary);
+    const videoPrompt = await generateVideoPrompt(summary);
     appendProgress(run, "prompt", "completed", "Video prompt generated.");
 
     appendProgress(run, "video", "running", "Generating video with Veo (this may take a while).");

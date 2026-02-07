@@ -35,6 +35,18 @@ function readOptionalRunId(payload: unknown): string | undefined {
   return undefined;
 }
 
+function readOptionalSummary(payload: unknown): string | undefined {
+  if (!isRecord(payload)) {
+    return undefined;
+  }
+
+  if (typeof payload.summary === "string" && payload.summary.trim()) {
+    return payload.summary.trim();
+  }
+
+  return undefined;
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isGranolaConfigured()) {
     return NextResponse.json(
@@ -72,6 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const generationResult = await generateMeetingVideo({
     meetingId,
     runId: readOptionalRunId(payload),
+    summary: readOptionalSummary(payload),
   });
 
   if (generationResult.status === "failed") {

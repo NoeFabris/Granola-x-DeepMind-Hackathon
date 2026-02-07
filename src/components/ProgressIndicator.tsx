@@ -1,9 +1,10 @@
 export type ProgressStepStatus = "pending" | "running" | "completed" | "failed";
 
 export const DEFAULT_GENERATION_STEP_LABELS = [
-  "Generating script",
-  "Creating clips",
-  "Stitching video",
+  "Fetching summary",
+  "Generating prompt",
+  "Creating video",
+  "Saving video",
 ] as const;
 
 export interface ProgressStep {
