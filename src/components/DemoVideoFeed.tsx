@@ -11,19 +11,19 @@ interface DemoMeeting {
 const DEMO_MEETINGS: DemoMeeting[] = [
   {
     id: "demo-1",
-    title: "Q4 Strategy Review",
+    title: "Career opportunity exploration with Zach Howden at Liberty.com",
     summary:
       "Discussed quarterly revenue targets and market expansion plans.\nReviewed competitive landscape and adjusted pricing strategy.\nAligned on hiring goals for the next quarter.",
   },
   {
     id: "demo-2",
-    title: "Product Roadmap Planning",
+    title: "Technical candidate interview for senior frontend role with SAP Hybris experience",
     summary:
       "Prioritized feature backlog for the upcoming release cycle.\nDebated trade-offs between performance improvements and new features.\nAgreed on launch timeline for the mobile app redesign.",
   },
   {
     id: "demo-3",
-    title: "Engineering Sprint Retro",
+    title: "Technical interview with Poonam and Adam for frontend role",
     summary:
       "Identified bottlenecks in the CI/CD pipeline.\nCelebrated shipping the new onboarding flow ahead of schedule.\nPlanned improvements to code review turnaround time.",
   },
