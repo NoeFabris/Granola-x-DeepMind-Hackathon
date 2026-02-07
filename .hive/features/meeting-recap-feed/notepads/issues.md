@@ -24,3 +24,7 @@
 
 ## 2026-02-07 (Task 10)
 - `tests/project-setup.test.mjs` asserts the literal string "Meeting Recap Feed" exists in `src/app/page.tsx`, so moving the title fully into a separate component requires passing the title as a string prop (or updating the test).
+
+## 2026-02-07 (Task 11)
+- Next.js 14 treats `outputFileTracingIncludes` as an experimental option; placing it at the top-level of `next.config.js` emits a warning and is ignored.
+- Veo clip generation can exceed serverless function time limits (default polling timeout is 180s per clip); large meetings may require higher `maxDuration` and/or an external/background processing service.

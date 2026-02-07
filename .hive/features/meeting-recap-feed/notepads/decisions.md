@@ -41,3 +41,8 @@
 - Implemented dark-mode support via lightweight CSS variables in `src/app/globals.css` with `@media (prefers-color-scheme: dark)` (no theme toggle/settings UI).
 - Kept the header as a dedicated `Header` component overlaid on the feed from `src/app/page.tsx` to keep branding consistent without changing feed logic.
 - Used safe-area-aware positioning (CSS `env(safe-area-inset-*)` through `--safe-*` variables) for overlay elements and controls to improve mobile ergonomics.
+
+## 2026-02-07 (Task 11)
+- Added `vercel.json` with a `functions` config to raise `maxDuration` for the long-running generation routes, keeping the values within the Hobby plan ceiling while allowing upgrades on Pro/Enterprise.
+- Documented all required/optional runtime env vars in `.env.local.example`, including the production Granola OAuth callback path.
+- Used `experimental.outputFileTracingIncludes` in `next.config.js` to bundle `ffmpeg-static`/`ffprobe-static` binaries for serverless deployments.
