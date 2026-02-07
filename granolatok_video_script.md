@@ -21,6 +21,11 @@
    — or the attention span — to read through pages of notes. The future CEO grew
    up on 60-second videos, not memos."
 
+
+  The future CEO won't read meeting notes. They grew up on Reels and Shorts.
+
+  So we turned Granola meetings into TikToks. Meet GranolaTok.
+
   ---
   [0:35–0:55] THE SOLUTION
 
