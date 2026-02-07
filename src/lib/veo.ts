@@ -7,7 +7,7 @@ import type {
 } from "@/types/video";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const DEFAULT_VEO_MODEL = process.env.VEO_MODEL ?? "veo-3.1-fast-generate-001";
+const DEFAULT_VEO_MODEL = "veo-3.1-generate-preview";
 const DEFAULT_ASPECT_RATIO: VeoAspectRatio = "9:16";
 const DEFAULT_POLL_INTERVAL_MS = 3_000;
 const DEFAULT_TIMEOUT_MS = 180_000;
@@ -171,16 +171,21 @@ export function buildVeoPrompt(chunk: ScriptChunk): string {
 }
 
 async function startOperation(options: StartOperationOptions): Promise<string> {
-  const endpoint = `${GEMINI_BASE_URL}/models/${options.model}:generateVideos?key=${encodeURIComponent(options.apiKey)}`;
+  const endpoint = `${GEMINI_BASE_URL}/models/${options.model}:predictLongRunning?key=${encodeURIComponent(options.apiKey)}`;
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      prompt: buildVeoPrompt(options.chunk),
-      config: {
+      instances: [
+        {
+          prompt: buildVeoPrompt(options.chunk),
+        },
+      ],
+      parameters: {
         aspectRatio: options.aspectRatio,
+        sampleCount: 1,
       },
     }),
   });

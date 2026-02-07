@@ -3,7 +3,7 @@ import { buildScriptPrompt } from "@/lib/prompts";
 import type { GeneratedMeetingScript, ScriptChunk } from "@/types/script";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const DEFAULT_MODEL = process.env.GEMINI_SCRIPT_MODEL ?? "gemini-2.0-flash";
+const DEFAULT_MODEL = "gemini-3-flash-preview";
 const DEFAULT_CHUNK_SECONDS = 8;
 
 interface GenerateMeetingScriptOptions {
