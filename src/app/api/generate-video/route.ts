@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isGranolaConfigured } from "@/lib/granola";
 import {
   generateMeetingVideo,
   getStoredVideoAsset,
@@ -36,13 +35,46 @@ function readOptionalRunId(payload: unknown): string | undefined {
   return undefined;
 }
 
+function readAccessToken(request: NextRequest): string | undefined {
+  const authorization = request.headers.get("authorization");
+
+  if (typeof authorization === "string" && authorization.toLowerCase().startsWith("bearer ")) {
+    const bearerToken = authorization.slice(7).trim();
+
+    if (bearerToken) {
+      return bearerToken;
+    }
+  }
+
+  const headerToken = request.headers.get("x-granola-token")?.trim();
+
+  if (headerToken) {
+    return headerToken;
+  }
+
+  return undefined;
+}
+
+function isAuthErrorMessage(errorMessage: string): boolean {
+  const normalized = errorMessage.toLowerCase();
+
+  return (
+    normalized.includes("401") ||
+    normalized.includes("unauthorized") ||
+    normalized.includes("forbidden") ||
+    normalized.includes("invalid token")
+  );
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!isGranolaConfigured()) {
+  const accessToken = readAccessToken(request);
+
+  if (!accessToken) {
     return NextResponse.json(
       {
-        error: "Granola is not configured. Set the GRANOLA_API_TOKEN environment variable.",
+        error: "Granola access token is required. Please connect your Granola account.",
       },
-      { status: 503 }
+      { status: 401 }
     );
   }
 
@@ -72,17 +104,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   const generationResult = await generateMeetingVideo({
     meetingId,
+    accessToken,
     runId: readOptionalRunId(payload),
   });
 
   if (generationResult.status === "failed") {
+    const status = isAuthErrorMessage(generationResult.error) ? 401 : 500;
+
     return NextResponse.json(
       {
         error: generationResult.error,
         runId: generationResult.runId,
         progress: generationResult.progress,
       },
-      { status: 500 }
+      { status }
     );
   }
 

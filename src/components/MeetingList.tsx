@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ConnectGranola } from "@/components/ConnectGranola";
 import { MeetingCard } from "@/components/MeetingCard";
+import { useGranolaToken } from "@/hooks/useGranolaToken";
 import type { GranolaMeeting } from "@/types/granola";
 
 interface MeetingsPayload {
@@ -11,12 +12,25 @@ interface MeetingsPayload {
 }
 
 export function MeetingList() {
+  const { token, hasToken, isLoading: isLoadingToken, setToken, clearToken } = useGranolaToken();
   const [meetings, setMeetings] = useState<GranolaMeeting[]>([]);
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isLoadingToken || !hasToken || !token) {
+      setIsConnected(false);
+      setMeetings([]);
+      return;
+    }
+
+    const accessToken = token;
+
+    if (!accessToken) {
+      return;
+    }
+
     let isMounted = true;
 
     async function loadMeetings() {
@@ -25,6 +39,9 @@ export function MeetingList() {
       try {
         const response = await fetch("/api/meetings?limit=20", {
           cache: "no-store",
+          headers: {
+            "X-Granola-Token": accessToken,
+          },
         });
         const payload = (await response.json().catch(() => ({}))) as MeetingsPayload;
 
@@ -32,10 +49,10 @@ export function MeetingList() {
           return;
         }
 
-        if (response.status === 503) {
+        if (response.status === 401) {
           setIsConnected(false);
           setMeetings([]);
-          setError(null);
+          setError(payload.error || "Invalid Granola access token. Please reconnect.");
           return;
         }
 
@@ -72,15 +89,35 @@ export function MeetingList() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [token, hasToken, isLoadingToken]);
+
+  const handleConnect = (newToken: string) => {
+    setToken(newToken);
+    setError(null);
+  };
+
+  const handleDisconnect = () => {
+    clearToken();
+    setIsConnected(false);
+    setMeetings([]);
+    setError(null);
+  };
 
   const emptyStateLabel = useMemo(() => {
-    if (!isConnected) {
-      return "Set GRANOLA_API_TOKEN to load your recent meetings.";
+    if (!hasToken) {
+      return null;
     }
 
     return "No meetings available yet.";
-  }, [isConnected]);
+  }, [hasToken]);
+
+  if (isLoadingToken) {
+    return (
+      <section className="w-full max-w-2xl rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-5 shadow-xl backdrop-blur motion-safe:animate-[fade-up_520ms_ease-out_forwards]">
+        <p className="text-sm text-[color:var(--app-muted)]">Loading...</p>
+      </section>
+    );
+  }
 
   return (
     <section className="w-full max-w-2xl rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-5 shadow-xl backdrop-blur motion-safe:animate-[fade-up_520ms_ease-out_forwards]">
@@ -89,8 +126,24 @@ export function MeetingList() {
           <h2 className="text-lg font-semibold text-[color:var(--app-fg)]">Recent meetings</h2>
           <p className="text-sm text-[color:var(--app-muted)]">From your Granola account</p>
         </div>
-        <ConnectGranola connected={isConnected} />
+        {isConnected && (
+          <ConnectGranola
+            connected={isConnected}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+          />
+        )}
       </div>
+
+      {!hasToken && (
+        <div className="mt-4">
+          <ConnectGranola
+            connected={false}
+            onConnect={handleConnect}
+            onDisconnect={handleDisconnect}
+          />
+        </div>
+      )}
 
       {isLoadingMeetings ? (
         <p className="mt-4 text-sm text-[color:var(--app-muted)]">Loading meetings...</p>
@@ -102,7 +155,7 @@ export function MeetingList() {
         </p>
       ) : null}
 
-      {!isLoadingMeetings && !error && meetings.length === 0 ? (
+      {!isLoadingMeetings && !error && hasToken && meetings.length === 0 ? (
         <p className="mt-4 rounded-xl border border-[color:var(--panel-border)] bg-white/60 p-3 text-sm text-[color:var(--app-muted)] dark:bg-white/5">
           {emptyStateLabel}
         </p>

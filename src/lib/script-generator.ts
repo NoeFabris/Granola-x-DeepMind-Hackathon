@@ -8,6 +8,7 @@ const DEFAULT_CHUNK_SECONDS = 8;
 
 interface GenerateMeetingScriptOptions {
   meetingId: string;
+  accessToken: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -170,6 +171,7 @@ export async function generateMeetingScript(
   options: GenerateMeetingScriptOptions
 ): Promise<GeneratedMeetingScript> {
   const summaryResult = await getDocumentSummary({
+    accessToken: options.accessToken,
     documentId: options.meetingId,
   });
 

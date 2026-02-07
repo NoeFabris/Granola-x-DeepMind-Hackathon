@@ -55,6 +55,7 @@ interface StoredVideoPlayback {
 
 interface GenerateMeetingVideoOptions {
   meetingId: string;
+  accessToken: string;
   runId?: string;
 }
 
@@ -266,6 +267,7 @@ export async function generateMeetingVideo(
     appendProgress(run, "script", "running", "Generating meeting recap script.");
     const scriptResult = await generateMeetingScript({
       meetingId: options.meetingId,
+      accessToken: options.accessToken,
     });
 
     appendProgress(

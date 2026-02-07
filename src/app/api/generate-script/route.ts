@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isGranolaConfigured } from "@/lib/granola";
 import { generateMeetingScript } from "@/lib/script-generator";
 
 export const runtime = "nodejs";
@@ -20,13 +19,46 @@ function readMeetingId(payload: unknown): string | undefined {
   return undefined;
 }
 
+function readAccessToken(request: NextRequest): string | undefined {
+  const authorization = request.headers.get("authorization");
+
+  if (typeof authorization === "string" && authorization.toLowerCase().startsWith("bearer ")) {
+    const bearerToken = authorization.slice(7).trim();
+
+    if (bearerToken) {
+      return bearerToken;
+    }
+  }
+
+  const headerToken = request.headers.get("x-granola-token")?.trim();
+
+  if (headerToken) {
+    return headerToken;
+  }
+
+  return undefined;
+}
+
+function isAuthErrorMessage(errorMessage: string): boolean {
+  const normalized = errorMessage.toLowerCase();
+
+  return (
+    normalized.includes("401") ||
+    normalized.includes("unauthorized") ||
+    normalized.includes("forbidden") ||
+    normalized.includes("invalid token")
+  );
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  if (!isGranolaConfigured()) {
+  const accessToken = readAccessToken(request);
+
+  if (!accessToken) {
     return NextResponse.json(
       {
-        error: "Granola is not configured. Set the GRANOLA_API_TOKEN environment variable.",
+        error: "Granola access token is required. Please connect your Granola account.",
       },
-      { status: 503 }
+      { status: 401 }
     );
   }
 
@@ -55,11 +87,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const script = await generateMeetingScript({ meetingId });
+    const script = await generateMeetingScript({ meetingId, accessToken });
     return NextResponse.json(script.chunks);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown script generation error.";
+
+    if (isAuthErrorMessage(message)) {
+      return NextResponse.json(
+        {
+          error: "Invalid Granola access token. Please reconnect and try again.",
+        },
+        { status: 401 }
+      );
+    }
 
     return NextResponse.json(
       {

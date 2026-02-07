@@ -5,35 +5,28 @@ import type {
   GranolaMeetingsResponse,
 } from "@/types/granola";
 
-let clientInstance: InstanceType<typeof GranolaClient> | undefined;
+const clientCache = new Map<string, InstanceType<typeof GranolaClient>>();
 
-function getClient(): InstanceType<typeof GranolaClient> {
-  if (clientInstance) {
-    return clientInstance;
+function getClient(token: string): InstanceType<typeof GranolaClient> {
+  const existing = clientCache.get(token);
+  if (existing) {
+    return existing;
   }
 
-  const token = process.env.GRANOLA_API_TOKEN;
-
-  if (!token) {
-    throw new Error("Missing GRANOLA_API_TOKEN environment variable.");
-  }
-
-  clientInstance = new GranolaClient(token);
-  return clientInstance;
-}
-
-export function isGranolaConfigured(): boolean {
-  return typeof process.env.GRANOLA_API_TOKEN === "string" && process.env.GRANOLA_API_TOKEN.length > 0;
+  const client = new GranolaClient(token);
+  clientCache.set(token, client);
+  return client;
 }
 
 interface GetMeetingsOptions {
+  accessToken: string;
   limit?: number;
 }
 
 export async function getMeetings(
-  options?: GetMeetingsOptions
+  options: GetMeetingsOptions
 ): Promise<GranolaMeetingsResponse> {
-  const client = getClient();
+  const client = getClient(options.accessToken);
 
   const workspaces = await client.getWorkspaces();
   const workspaceId = workspaces.workspaces?.[0]?.workspace?.workspace_id;
@@ -63,13 +56,14 @@ export async function getMeetings(
 }
 
 interface GetDocumentSummaryOptions {
+  accessToken: string;
   documentId: string;
 }
 
 export async function getDocumentSummary(
   options: GetDocumentSummaryOptions
 ): Promise<GranolaDocumentSummaryResponse> {
-  const client = getClient();
+  const client = getClient(options.accessToken);
 
   const transcript = await client.getDocumentTranscript(options.documentId);
 

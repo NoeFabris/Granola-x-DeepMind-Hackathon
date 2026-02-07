@@ -7,6 +7,7 @@ import { GeneratingState } from "@/components/GeneratingState";
 import type { ProgressStep, ProgressStepStatus } from "@/components/ProgressIndicator";
 import { VideoControls } from "@/components/VideoControls";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { useGranolaToken } from "@/hooks/useGranolaToken";
 import type { GranolaMeeting } from "@/types/granola";
 
 interface MeetingsPayload {
@@ -284,9 +285,9 @@ function buildProgressView(
 }
 
 export function VideoFeed() {
+  const { token, hasToken, isLoading: isLoadingToken, setToken, clearToken } = useGranolaToken();
   const [meetings, setMeetings] = useState<GranolaMeeting[]>([]);
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [videoByMeeting, setVideoByMeeting] = useState<Record<string, string>>({});
@@ -306,6 +307,17 @@ export function VideoFeed() {
   }, []);
 
   useEffect(() => {
+    if (isLoadingToken || !hasToken || !token) {
+      setMeetings([]);
+      return;
+    }
+
+    const accessToken = token;
+
+    if (!accessToken) {
+      return;
+    }
+
     let isMounted = true;
 
     async function loadMeetings() {
@@ -314,6 +326,9 @@ export function VideoFeed() {
       try {
         const response = await fetch("/api/meetings?limit=20", {
           cache: "no-store",
+          headers: {
+            "X-Granola-Token": accessToken,
+          },
         });
         const payload = (await response.json().catch(() => ({}))) as MeetingsPayload;
 
@@ -321,10 +336,9 @@ export function VideoFeed() {
           return;
         }
 
-        if (response.status === 503) {
-          setIsConnected(false);
+        if (response.status === 401) {
           setMeetings([]);
-          setError(null);
+          setError(payload.error || "Invalid Granola access token. Please reconnect.");
           return;
         }
 
@@ -334,7 +348,6 @@ export function VideoFeed() {
           );
         }
 
-        setIsConnected(true);
         setError(null);
         setMeetings(Array.isArray(payload.meetings) ? payload.meetings : []);
       } catch (requestError) {
@@ -346,7 +359,6 @@ export function VideoFeed() {
           requestError instanceof Error ? requestError.message : "Unable to load meetings.";
 
         setError(message);
-        setIsConnected(false);
       } finally {
         if (isMounted) {
           setIsLoadingMeetings(false);
@@ -359,7 +371,7 @@ export function VideoFeed() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [token, hasToken, isLoadingToken]);
 
   useEffect(() => {
     if (activeIndex < meetings.length) {
@@ -445,6 +457,11 @@ export function VideoFeed() {
   }, [isGeneratingByMeeting]);
 
   const handleGenerateVideo = useCallback(async (meeting: GranolaMeeting, index: number) => {
+    if (!token) {
+      setError("Granola access token is missing. Please reconnect.");
+      return;
+    }
+
     const key = meetingKey(meeting, index);
     const runId = createRunId();
 
@@ -527,6 +544,7 @@ export function VideoFeed() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-Granola-Token": token as string,
         },
         body: JSON.stringify({
           meetingId: meeting.id,
@@ -547,11 +565,10 @@ export function VideoFeed() {
         }));
       }
 
-      if (response.status === 503) {
-        setIsConnected(false);
+      if (response.status === 401) {
         setGenerationErrors((previous) => ({
           ...previous,
-          [key]: "Granola is not configured. Set GRANOLA_API_TOKEN.",
+          [key]: payload.error || "Invalid Granola access token. Please reconnect.",
         }));
         return;
       }
@@ -576,7 +593,6 @@ export function VideoFeed() {
         ...previous,
         [key]: false,
       }));
-      setIsConnected(true);
       setError(null);
     } catch (requestError) {
       const message =
@@ -594,7 +610,17 @@ export function VideoFeed() {
         [key]: false,
       }));
     }
-  }, []);
+  }, [token]);
+
+  if (isLoadingToken) {
+    return (
+      <section className="flex h-screen h-[100dvh] items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] text-slate-200">
+        <p className="rounded-full border border-white/20 bg-black/25 px-5 py-2 text-sm tracking-wide">
+          Loading...
+        </p>
+      </section>
+    );
+  }
 
   if (isLoadingMeetings) {
     return (
@@ -606,17 +632,20 @@ export function VideoFeed() {
     );
   }
 
-  if (!isConnected) {
+  if (!hasToken) {
     return (
       <section className="flex h-screen h-[100dvh] items-center justify-center bg-[linear-gradient(160deg,#020617,#0f172a,#111827)] p-6 text-slate-100">
-        <div className="w-full max-w-md rounded-3xl border border-white/20 bg-black/30 p-7 text-center shadow-2xl backdrop-blur">
-          <p className="text-xs uppercase tracking-[0.24em] text-emerald-200">Meeting recap feed</p>
-          <h2 className="mt-4 text-2xl font-semibold">Configure Granola to start swiping recaps</h2>
-          <p className="mt-3 text-sm text-slate-300">
-            Set the GRANOLA_API_TOKEN environment variable to load meetings and generate TikTok-style recap videos.
+        <div className="w-full max-w-md rounded-3xl border border-white/20 bg-black/30 p-7 shadow-2xl backdrop-blur">
+          <p className="text-center text-xs uppercase tracking-[0.24em] text-emerald-200">Meeting recap feed</p>
+          <h2 className="mt-4 text-center text-2xl font-semibold">Connect Granola to start swiping recaps</h2>
+          <p className="mt-3 text-center text-sm text-slate-300">
+            Enter your Granola access token to load meetings and generate TikTok-style recap videos.
           </p>
-          <div className="mt-6 flex justify-center">
-            <ConnectGranola connected={false} />
+          <div className="mt-6">
+            <ConnectGranola
+              connected={false}
+              onConnect={setToken}
+            />
           </div>
           {error ? (
             <p className="mt-4 rounded-lg border border-rose-200/50 bg-rose-500/20 px-3 py-2 text-sm text-rose-100">
