@@ -17,3 +17,8 @@
 - Veo clip generation via Google AI is long-running and returns an operation name first, so the service needs explicit polling until `done` before reading generated video data.
 - Returning `url ?? bufferBase64` from generated clips keeps the API resilient to response-shape differences between hosted URLs and inline video payload variants.
 - Keeping `generateVeoClips` request body validation in the route (instead of the client UI) allows later feed composers to reuse the endpoint safely.
+
+## 2026-02-07 (Task 05)
+- `fluent-ffmpeg` can build a chained `xfade` graph for multi-clip transitions, but each transition offset should be based on cumulative duration minus prior overlaps to avoid jumpy cuts.
+- Returning stitched output as a `data:video/mp4;base64,...` URL keeps MVP delivery simple without introducing storage/upload infrastructure.
+- Wrapping the whole stitch flow in a `mkdtemp` workspace plus `rm(..., { recursive: true, force: true })` cleanup avoids temp file leaks even on failures.

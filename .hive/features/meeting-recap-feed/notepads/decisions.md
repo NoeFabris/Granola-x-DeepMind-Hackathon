@@ -16,3 +16,8 @@
 - Implemented Veo integration through direct Gemini REST calls in `src/lib/veo.ts` (`:generateVideos` + operation polling) to avoid adding another SDK dependency.
 - Standardized clip generation on `9:16` as the route default to match TikTok-style output requirements.
 - Designed `/api/generate-clips` to return a plain array of video URL/buffer strings so downstream feed assembly can consume clips without additional response mapping.
+
+## 2026-02-07 (Task 05)
+- Implemented stitching with `fluent-ffmpeg` + bundled static binaries (`ffmpeg-static`, `ffprobe-static`) so the service does not depend on a system-level FFmpeg install.
+- Kept `/api/stitch-video` response shape as `{ videoUrl, mimeType }` where `videoUrl` is a data URL, deferring cloud/object storage to a later task.
+- Limited MVP transitions to visual crossfades (`xfade`) and skipped advanced effects/audio compositing to stay in scope.
