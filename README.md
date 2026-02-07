@@ -23,6 +23,14 @@ GranolaTok turns your meeting transcripts from [Granola](https://www.granola.ai/
 
 Next.js app that connects to Granola via the official MCP server, generates a short recap script with Gemini, renders TikTok-style Veo clips, and stitches them into a single vertical video.
 
+## Tech Stack
+
+- **Gemini API**: Powers the "Transcript to Viral Video" pipeline, using advanced prompting to extract key moments and write engaging scripts.
+- **Veo**: Generates high-quality, relevant video backgrounds for each segment.
+- **Granola MCP & Client**: Fetches meeting transcripts directly from your Granola account.
+- **TypeScript**: The backbone of our Next.js application.
+- **Vertex API**: Used to generate the full demo video experience.
+
 ## Local Development
 
 1. Install deps: `npm install`
