@@ -9,10 +9,10 @@ interface GeneratingStateProps {
 
 export function GeneratingState({ title, headline, detail, steps }: GeneratingStateProps) {
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/45 px-4 backdrop-blur-sm">
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.2),transparent_40%),radial-gradient(circle_at_80%_15%,rgba(56,189,248,0.22),transparent_42%)]" />
 
-      <div className="relative w-full max-w-md rounded-3xl border border-white/20 bg-slate-950/85 p-5 shadow-2xl">
+      <div className="relative w-full max-w-md rounded-3xl border border-white/20 bg-slate-950/85 p-5 shadow-2xl motion-safe:animate-[fade-up_520ms_ease-out_forwards]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
           Generating recap
         </p>

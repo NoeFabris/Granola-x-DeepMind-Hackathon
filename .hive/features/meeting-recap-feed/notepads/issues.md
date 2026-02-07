@@ -21,3 +21,6 @@
 
 ## 2026-02-07 (Task 09)
 - No blockers encountered.
+
+## 2026-02-07 (Task 10)
+- `tests/project-setup.test.mjs` asserts the literal string "Meeting Recap Feed" exists in `src/app/page.tsx`, so moving the title fully into a separate component requires passing the title as a string prop (or updating the test).

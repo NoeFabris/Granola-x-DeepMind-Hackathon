@@ -54,11 +54,11 @@ export function ProgressIndicator({ steps }: ProgressIndicatorProps) {
       {steps.map((step) => (
         <li
           key={step.id}
-          className="flex items-center justify-between rounded-xl border border-white/15 bg-black/35 px-3 py-2"
+          className="flex items-center justify-between rounded-xl border border-white/15 bg-black/30 px-3 py-2 shadow-sm"
         >
           <span className="text-sm text-slate-100">{step.label}</span>
           <span
-            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] ${statusClasses(step.status)}`}
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors ${statusClasses(step.status)}`}
           >
             {statusLabel(step.status)}
           </span>

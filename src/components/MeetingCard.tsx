@@ -68,10 +68,12 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
   const participants = toParticipantList(meeting);
 
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-base font-semibold text-slate-900">{meeting.title}</h3>
-      <p className="mt-1 text-sm text-slate-500">{formatMeetingDate(meeting.startedAt)}</p>
-      <p className="mt-3 text-sm text-slate-700">
+    <article className="rounded-xl border border-slate-200/60 bg-white/70 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-white/10 dark:bg-white/5">
+      <h3 className="text-base font-semibold text-slate-950 dark:text-slate-50">{meeting.title}</h3>
+      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        {formatMeetingDate(meeting.startedAt)}
+      </p>
+      <p className="mt-3 text-sm text-slate-800 dark:text-slate-200">
         Participants: {participants.length > 0 ? participants.join(", ") : "Not listed"}
       </p>
     </article>

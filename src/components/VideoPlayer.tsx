@@ -35,7 +35,7 @@ export function VideoPlayer({ videoUrl, isActive, isPaused, title }: VideoPlayer
   if (!videoUrl) {
     return (
       <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.25),transparent_45%),radial-gradient(circle_at_80%_15%,rgba(16,185,129,0.25),transparent_35%),linear-gradient(160deg,#020617,#0f172a_55%,#111827)]">
-        <div className="max-w-sm rounded-2xl border border-white/15 bg-black/35 p-6 text-center backdrop-blur">
+        <div className="max-w-sm rounded-3xl border border-white/15 bg-black/35 p-6 text-center backdrop-blur motion-safe:animate-[fade-up_600ms_ease-out_forwards]">
           <p className="text-xs uppercase tracking-[0.22em] text-emerald-200">Recap pending</p>
           <h3 className="mt-3 text-lg font-semibold text-white">{title}</h3>
           <p className="mt-2 text-sm text-slate-200">
@@ -49,7 +49,7 @@ export function VideoPlayer({ videoUrl, isActive, isPaused, title }: VideoPlayer
   return (
     <video
       ref={videoRef}
-      className="absolute inset-0 h-full w-full object-cover"
+      className="absolute inset-0 h-full w-full object-cover [transform:translateZ(0)]"
       src={videoUrl}
       muted
       playsInline

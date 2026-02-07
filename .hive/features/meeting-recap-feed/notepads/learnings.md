@@ -37,3 +37,8 @@
 - The existing `runId` support in `POST /api/generate-video` plus `GET /api/generate-video?runId=...` enables UI progress updates without introducing websockets or queue workers.
 - Pipeline events do not emit per-clip counts while clips are rendering, so the feed can derive a user-friendly `Creating clips x/y` label from known chunk totals and elapsed time.
 - Keeping progress UI in dedicated `GeneratingState`, `ProgressIndicator`, and `ErrorState` components makes VideoFeed logic easier to maintain while preserving task scope.
+
+## 2026-02-07 (Task 10)
+- `h-[100dvh]` (dynamic viewport units) provides a more stable full-height feed on mobile browsers compared to `h-screen` alone.
+- Safe-area inset CSS variables (`--safe-top`, `--safe-bottom`, etc.) combined with Tailwind `calc(...)` arbitrary values keep overlays readable on notched devices.
+- A couple of global utilities (`.scrollbar-hidden`, `.ios-scroll`) are enough to make the snap feed feel more native without adding a Tailwind plugin.
