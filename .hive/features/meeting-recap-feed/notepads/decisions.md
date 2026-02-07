@@ -21,3 +21,8 @@
 - Implemented stitching with `fluent-ffmpeg` + bundled static binaries (`ffmpeg-static`, `ffprobe-static`) so the service does not depend on a system-level FFmpeg install.
 - Kept `/api/stitch-video` response shape as `{ videoUrl, mimeType }` where `videoUrl` is a data URL, deferring cloud/object storage to a later task.
 - Limited MVP transitions to visual crossfades (`xfade`) and skipped advanced effects/audio compositing to stay in scope.
+
+## 2026-02-07 (Task 06)
+- Implemented full orchestration in `src/lib/video-pipeline.ts` to centralize meeting -> script -> clips -> stitch flow and keep `/api/generate-video` route thin.
+- Used a single endpoint strategy: `POST /api/generate-video` for generation, plus `GET /api/generate-video?runId=...` (progress) and `GET /api/generate-video?videoId=...` (temporary playback) to support UI updates without adding extra routes.
+- Chose in-memory TTL storage for generated videos and pipeline runs to satisfy temporary playback/progress requirements while explicitly avoiding persistent storage and queue infrastructure.

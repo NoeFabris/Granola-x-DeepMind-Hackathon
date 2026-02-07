@@ -22,3 +22,8 @@
 - `fluent-ffmpeg` can build a chained `xfade` graph for multi-clip transitions, but each transition offset should be based on cumulative duration minus prior overlaps to avoid jumpy cuts.
 - Returning stitched output as a `data:video/mp4;base64,...` URL keeps MVP delivery simple without introducing storage/upload infrastructure.
 - Wrapping the whole stitch flow in a `mkdtemp` workspace plus `rm(..., { recursive: true, force: true })` cleanup avoids temp file leaks even on failures.
+
+## 2026-02-07 (Task 06)
+- A pipeline-level in-memory run registry (`runId` + progress events) provides a low-overhead way for UI polling without introducing a queue system.
+- Allowing clients to optionally pass their own `runId` on `POST /api/generate-video` enables progress polling in parallel with the long-running generation request.
+- Converting stitched data URLs into temporary binary assets and serving them via `GET /api/generate-video?videoId=...` keeps playback efficient while staying within the no-persistence MVP scope.
