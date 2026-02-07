@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { isGranolaConfigured } from "@/lib/granola";
 import {
   generateMeetingVideo,
-  getStoredVideoAsset,
   getVideoGenerationRun,
 } from "@/lib/video-pipeline";
 
@@ -89,10 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     runId: generationResult.data.runId,
     meetingId: generationResult.data.meetingId,
-    videoId: generationResult.data.videoId,
     videoUrl: generationResult.data.videoUrl,
-    mimeType: generationResult.data.mimeType,
-    expiresAt: generationResult.data.expiresAt,
     progress: generationResult.data.progress,
   });
 }
@@ -115,41 +111,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(run);
   }
 
-  const videoId = request.nextUrl.searchParams.get("videoId");
-
-  if (videoId) {
-    const videoAsset = getStoredVideoAsset(videoId);
-
-    if (!videoAsset) {
-      return NextResponse.json(
-        {
-          error: "Video not found or expired.",
-        },
-        { status: 404 }
-      );
-    }
-
-    const videoPayload = new Uint8Array(
-      videoAsset.buffer.buffer,
-      videoAsset.buffer.byteOffset,
-      videoAsset.buffer.byteLength
-    );
-    const body = new ArrayBuffer(videoPayload.byteLength);
-    new Uint8Array(body).set(videoPayload);
-
-    return new NextResponse(body, {
-      status: 200,
-      headers: {
-        "Content-Type": videoAsset.mimeType,
-        "Cache-Control": "private, max-age=300",
-        "Content-Length": String(videoAsset.buffer.byteLength),
-      },
-    });
-  }
-
   return NextResponse.json(
     {
-      error: "Provide runId for progress or videoId for playback.",
+      error: "Provide runId for progress polling.",
     },
     { status: 400 }
   );

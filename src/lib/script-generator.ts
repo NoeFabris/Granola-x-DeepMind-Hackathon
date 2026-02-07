@@ -166,6 +166,54 @@ export async function generateScriptFromSummary(summary: string): Promise<Script
   return chunks;
 }
 
+export async function generateVideoPrompt(summary: string): Promise<string> {
+  const normalizedSummary = summary.trim();
+
+  if (!normalizedSummary) {
+    throw new Error("Cannot generate video prompt from an empty meeting summary.");
+  }
+
+  const apiKey = getApiKey();
+  const endpoint = `${GEMINI_BASE_URL}/models/${DEFAULT_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const prompt = [
+    "You are a creative director for short-form video content.",
+    "Given a meeting summary, write a single video generation prompt for Google Veo.",
+    "The prompt should describe an engaging, fun 8-second vertical (9:16) video that recaps the meeting highlights.",
+    "Include visual style, camera movement, colors, and energy level.",
+    "Keep it to one concise paragraph (3-5 sentences). Return ONLY the prompt text, no JSON, no markdown.",
+    "",
+    "Meeting summary:",
+    normalizedSummary,
+  ].join("\n");
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini video prompt generation failed: ${response.status} ${errorText}`);
+  }
+
+  const responseBody: unknown = await response.json();
+  const modelText = extractGeminiText(responseBody);
+
+  if (!modelText) {
+    throw new Error("Gemini did not return video prompt content.");
+  }
+
+  return modelText;
+}
+
 export async function generateMeetingScript(
   options: GenerateMeetingScriptOptions
 ): Promise<GeneratedMeetingScript> {

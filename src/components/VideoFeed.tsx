@@ -34,7 +34,7 @@ interface VideoGenerationRunPayload {
   error?: string;
 }
 
-type PipelineStep = "script" | "clips" | "stitching";
+type PipelineStep = "summary" | "prompt" | "video" | "saving";
 
 interface GenerationProgressSnapshot {
   runId: string;
@@ -42,9 +42,10 @@ interface GenerationProgressSnapshot {
 }
 
 const STEP_LABELS: Record<PipelineStep, string> = {
-  script: "Generating script",
-  clips: "Creating clips",
-  stitching: "Stitching video",
+  summary: "Fetching summary",
+  prompt: "Generating prompt",
+  video: "Creating video",
+  saving: "Saving video",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -146,99 +147,35 @@ function statusFromProgress(
   return currentStatus;
 }
 
-function parseCount(message: string, pattern: RegExp): number | undefined {
-  const matched = message.match(pattern);
-
-  if (!matched?.[1]) {
-    return undefined;
-  }
-
-  const count = Number.parseInt(matched[1], 10);
-
-  if (!Number.isFinite(count) || count <= 0) {
-    return undefined;
-  }
-
-  return count;
-}
-
-function readScriptChunkCount(progress: VideoPipelineProgressEvent[]): number | undefined {
-  for (let index = progress.length - 1; index >= 0; index -= 1) {
-    const message = progress[index]?.message;
-
-    if (!message) {
-      continue;
-    }
-
-    const count = parseCount(message, /Generated\s+(\d+)\s+script\s+chunks?/i);
-
-    if (count) {
-      return count;
-    }
-  }
-
-  return undefined;
-}
-
-function readGeneratedClipCount(progress: VideoPipelineProgressEvent[]): number | undefined {
-  for (let index = progress.length - 1; index >= 0; index -= 1) {
-    const message = progress[index]?.message;
-
-    if (!message) {
-      continue;
-    }
-
-    const count = parseCount(message, /Generated\s+(\d+)\s+video\s+clips?/i);
-
-    if (count) {
-      return count;
-    }
-  }
-
-  return undefined;
-}
-
-function readStepStartedAt(progress: VideoPipelineProgressEvent[], step: PipelineStep): number | undefined {
-  for (let index = progress.length - 1; index >= 0; index -= 1) {
-    const event = progress[index];
-
-    if (!event || event.step !== step || event.status !== "running") {
-      continue;
-    }
-
-    const parsed = Date.parse(event.timestamp ?? "");
-
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return undefined;
-}
-
 function buildProgressView(
   progress: VideoPipelineProgressEvent[],
-  progressTick: number
+  _progressTick: number
 ): { headline: string; detail: string; steps: ProgressStep[] } {
-  const scriptStatus = statusFromProgress(progress, "script");
-  const clipsStatus = statusFromProgress(progress, "clips");
-  const stitchingStatus = statusFromProgress(progress, "stitching");
+  const summaryStatus = statusFromProgress(progress, "summary");
+  const promptStatus = statusFromProgress(progress, "prompt");
+  const videoStatus = statusFromProgress(progress, "video");
+  const savingStatus = statusFromProgress(progress, "saving");
 
   const steps: ProgressStep[] = [
     {
-      id: "script",
-      label: STEP_LABELS.script,
-      status: scriptStatus,
+      id: "summary",
+      label: STEP_LABELS.summary,
+      status: summaryStatus,
     },
     {
-      id: "clips",
-      label: STEP_LABELS.clips,
-      status: clipsStatus,
+      id: "prompt",
+      label: STEP_LABELS.prompt,
+      status: promptStatus,
     },
     {
-      id: "stitching",
-      label: STEP_LABELS.stitching,
-      status: stitchingStatus,
+      id: "video",
+      label: STEP_LABELS.video,
+      status: videoStatus,
+    },
+    {
+      id: "saving",
+      label: STEP_LABELS.saving,
+      status: savingStatus,
     },
   ];
 
@@ -247,32 +184,24 @@ function buildProgressView(
       ? (progress[progress.length - 1]?.message as string)
       : "Preparing recap generation.";
 
-  const scriptChunkCount = readScriptChunkCount(progress);
-  const generatedClipCount = readGeneratedClipCount(progress);
+  let headline = STEP_LABELS.summary;
 
-  let headline = STEP_LABELS.script;
-
-  if (stitchingStatus === "running" || stitchingStatus === "completed") {
-    headline = STEP_LABELS.stitching;
-  } else if (clipsStatus === "running" || clipsStatus === "completed") {
-    if (typeof scriptChunkCount === "number") {
-      const startedAt = readStepStartedAt(progress, "clips") ?? progressTick;
-      const elapsedMs = Math.max(0, progressTick - startedAt);
-      const simulatedCount = Math.max(1, Math.floor(elapsedMs / 1400) + 1);
-      const currentCount =
-        clipsStatus === "completed"
-          ? generatedClipCount ?? scriptChunkCount
-          : Math.min(scriptChunkCount, simulatedCount);
-
-      headline = `Creating clips ${Math.max(1, Math.min(scriptChunkCount, currentCount))}/${scriptChunkCount}`;
-    } else {
-      headline = STEP_LABELS.clips;
-    }
-  } else if (scriptStatus === "completed") {
-    headline = STEP_LABELS.clips;
+  if (savingStatus === "running" || savingStatus === "completed") {
+    headline = STEP_LABELS.saving;
+  } else if (videoStatus === "running" || videoStatus === "completed") {
+    headline = STEP_LABELS.video;
+  } else if (promptStatus === "running" || promptStatus === "completed") {
+    headline = STEP_LABELS.prompt;
+  } else if (summaryStatus === "completed") {
+    headline = STEP_LABELS.prompt;
   }
 
-  if (scriptStatus === "failed" || clipsStatus === "failed" || stitchingStatus === "failed") {
+  if (
+    summaryStatus === "failed" ||
+    promptStatus === "failed" ||
+    videoStatus === "failed" ||
+    savingStatus === "failed"
+  ) {
     headline = "Generation failed";
   }
 
@@ -463,9 +392,9 @@ export function VideoFeed() {
         runId,
         progress: [
           {
-            step: "script",
+            step: "summary",
             status: "running",
-            message: "Generating script for meeting recap.",
+            message: "Fetching meeting summary.",
             timestamp: new Date().toISOString(),
           },
         ],

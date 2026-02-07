@@ -7,7 +7,7 @@ import type {
 } from "@/types/video";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-const DEFAULT_VEO_MODEL = process.env.VEO_MODEL ?? "veo-3.1-fast-generate-001";
+const DEFAULT_VEO_MODEL = process.env.VEO_MODEL ?? "veo-3.1-generate-preview";
 const DEFAULT_ASPECT_RATIO: VeoAspectRatio = "9:16";
 const DEFAULT_POLL_INTERVAL_MS = 3_000;
 const DEFAULT_TIMEOUT_MS = 180_000;
@@ -17,6 +17,24 @@ interface StartOperationOptions {
   model: string;
   chunk: ScriptChunk;
   aspectRatio: VeoAspectRatio;
+}
+
+interface StartRawOperationOptions {
+  apiKey: string;
+  model: string;
+  prompt: string;
+  aspectRatio: VeoAspectRatio;
+}
+
+export interface GenerateSingleVideoOptions {
+  prompt: string;
+  aspectRatio?: VeoAspectRatio;
+}
+
+export interface SingleVideoResult {
+  url?: string;
+  bufferBase64?: string;
+  mimeType?: string;
 }
 
 interface PollOperationOptions {
@@ -100,8 +118,17 @@ function extractGeneratedVideos(payload: unknown): unknown[] {
   }
 
   const response = isRecord(payload.response) ? payload.response : payload;
-  const generatedVideos = response.generatedVideos ?? response.generated_videos;
 
+  // predictLongRunning format: response.generateVideoResponse.generatedSamples
+  if (isRecord(response.generateVideoResponse)) {
+    const samples = (response.generateVideoResponse as Record<string, unknown>).generatedSamples;
+    if (Array.isArray(samples)) {
+      return samples;
+    }
+  }
+
+  // Legacy generateVideos format
+  const generatedVideos = response.generatedVideos ?? response.generated_videos;
   if (Array.isArray(generatedVideos)) {
     return generatedVideos;
   }
@@ -170,24 +197,22 @@ export function buildVeoPrompt(chunk: ScriptChunk): string {
   return lines.join("\n");
 }
 
-async function startOperation(options: StartOperationOptions): Promise<string> {
-  const endpoint = `${GEMINI_BASE_URL}/models/${options.model}:generateVideos?key=${encodeURIComponent(options.apiKey)}`;
+async function startRawOperation(options: StartRawOperationOptions): Promise<string> {
+  const endpoint = `${GEMINI_BASE_URL}/models/${options.model}:predictLongRunning?key=${encodeURIComponent(options.apiKey)}`;
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      prompt: buildVeoPrompt(options.chunk),
-      config: {
-        aspectRatio: options.aspectRatio,
-      },
+      instances: [{ prompt: options.prompt }],
+      parameters: { aspectRatio: options.aspectRatio },
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Veo generateVideos request failed: ${response.status} ${errorText}`);
+    throw new Error(`Veo predictLongRunning request failed: ${response.status} ${errorText}`);
   }
 
   const payload: unknown = await response.json();
@@ -198,6 +223,15 @@ async function startOperation(options: StartOperationOptions): Promise<string> {
   }
 
   return operationName;
+}
+
+async function startOperation(options: StartOperationOptions): Promise<string> {
+  return startRawOperation({
+    apiKey: options.apiKey,
+    model: options.model,
+    prompt: buildVeoPrompt(options.chunk),
+    aspectRatio: options.aspectRatio,
+  });
 }
 
 async function getOperationStatus(
@@ -234,9 +268,13 @@ async function pollForVideo(options: PollOperationOptions): Promise<VideoAsset> 
     }
 
     if (operation.done) {
+      console.log("[veo] operation payload:", JSON.stringify(operation.payload, null, 2));
       const generatedVideos = extractGeneratedVideos(operation.payload);
+      console.log("[veo] extracted videos:", JSON.stringify(generatedVideos, null, 2));
       const firstVideo = generatedVideos[0];
+      console.log("[veo] first video:", JSON.stringify(firstVideo, null, 2));
       const asset = extractVideoAsset(firstVideo);
+      console.log("[veo] extracted asset:", JSON.stringify(asset, null, 2));
 
       if (!asset.url && !asset.bufferBase64) {
         throw new Error("Veo operation completed without returning a video URL or buffer.");
@@ -249,6 +287,34 @@ async function pollForVideo(options: PollOperationOptions): Promise<VideoAsset> 
   }
 
   throw new Error(`Veo operation timed out after ${options.timeoutMs}ms.`);
+}
+
+export async function generateSingleVideo(
+  options: GenerateSingleVideoOptions
+): Promise<SingleVideoResult> {
+  const apiKey = getApiKey();
+  const model = DEFAULT_VEO_MODEL;
+  const aspectRatio = options.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+
+  const operationName = await startRawOperation({
+    apiKey,
+    model,
+    prompt: options.prompt,
+    aspectRatio,
+  });
+
+  const asset = await pollForVideo({
+    apiKey,
+    operationName,
+    pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
+    timeoutMs: DEFAULT_TIMEOUT_MS,
+  });
+
+  return {
+    url: asset.url,
+    bufferBase64: asset.bufferBase64,
+    mimeType: asset.mimeType,
+  };
 }
 
 export async function generateVeoClips(
