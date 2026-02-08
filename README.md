@@ -1,10 +1,8 @@
 # GranolaTok: Granola-x-DeepMind-Hackathon
 
-🚀 **[Watch YouTube Demo](https://www.youtube.com/watch?v=7GLjnvTdOpk)** | **[GranolaTok Live Demo](https://granola-tok.vercel.app/demo)** 🚀
+🚀 **[Watch YouTube Demo](https://www.youtube.com/watch?v=7GLjnvTdOpk)** 🚀
 
 **Your Granola meeting notes, but watchable.**
-
-> **Note:** You can use your own API key in the normal app, or check out our pre-configured demo at [/demo](https://granola-tok.vercel.app/demo).
 
 ## About the Project
 GranolaTok turns your meeting transcripts from [Granola](https://www.granola.ai/) into short, scrollable, TikTok-style video recaps. Powered by **Gemini**, it extracts the most important moments—decisions, action items, and highlights—providing a format your brain already craves.
